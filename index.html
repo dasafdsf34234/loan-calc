@@ -616,8 +616,8 @@
   <script>
     const STORAGE_KEY = 'loan_calc_pro_presets_v3';
     const ROOM_STORAGE_KEY = 'loan_calc_sync_room_v1';
-    constWORKING_STATE_KEY = 'loan_calc_working_state_v1';
-    const ACTIVE_PRESET_ID_KEY = 'loan_calc_active_preset_id_v1';
+    const WORKING_STATE_KEY = 'loan_calc_working_state_v2';
+    const ACTIVE_PRESET_ID_KEY = 'loan_calc_active_preset_id_v2';
 
     window.currentActivePresetId = localStorage.getItem(ACTIVE_PRESET_ID_KEY) || null;
 
@@ -633,6 +633,7 @@
       { id: 'H', color: '#334155', label: '차콜' }
     ];
 
+    // All initial loans unified to 'bullet' (만기일시상환) with collapsed advanced settings
     const DEFAULT_STATE = {
       propertyName: '창녕 코아루더파크 84㎡',
       propertyPrice: 35000,
@@ -644,35 +645,35 @@
       loans: [
         {
           id: 'A',
-          name: '은행 주담대(원리금)',
+          name: '대출 A',
           color: '#0f766e',
-          rate: 4.1,
-          feeRate: 1.2,
+          rate: 4.3,
+          feeRate: 1.4,
           feeMonths: 36,
           feeMethod: 'sliding',
-          repaymentMethod: 'epi',
+          repaymentMethod: 'bullet',
           loanTermMonths: 360,
-          showAdvanced: true,
-          limit: 23400
+          showAdvanced: false,
+          limit: 24000
         },
         {
           id: 'B',
-          name: '경락잔금대출(만기일시)',
+          name: '대출 B',
           color: '#d97706',
-          rate: 4.9,
+          rate: 5.8,
           feeRate: 0.5,
           feeMonths: 12,
           feeMethod: 'sliding',
           repaymentMethod: 'bullet',
           loanTermMonths: 360,
           showAdvanced: false,
-          limit: 27000
+          limit: 28000
         },
         {
           id: 'C',
-          name: '2금융권(만기일시)',
+          name: '대출 C',
           color: '#7c3aed',
-          rate: 6.5,
+          rate: 7.0,
           feeRate: 0.0,
           feeMonths: 36,
           feeMethod: 'sliding',
@@ -684,9 +685,22 @@
       ]
     };
 
-    window.appState = JSON.parse(JSON.stringify(DEFAULT_STATE));
+    // Load saved working state immediately on script parse so refresh never loses data
+    function getInitialWorkingState() {
+      try {
+        const raw = localStorage.getItem(WORKING_STATE_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed && Array.isArray(parsed.loans) && parsed.loans.length >= 2) {
+            return parsed;
+          }
+        }
+      } catch (e) {}
+      return JSON.parse(JSON.stringify(DEFAULT_STATE));
+    }
 
-    // Real-time Auto-Save to localStorage so refresh (F5) never loses current values
+    window.appState = getInitialWorkingState();
+
     function saveWorkingStateToLocal() {
       try {
         localStorage.setItem(WORKING_STATE_KEY, JSON.stringify(window.appState));
@@ -698,25 +712,12 @@
       } catch (e) {}
     }
 
-    function loadWorkingStateFromLocal() {
-      try {
-        const raw = localStorage.getItem(WORKING_STATE_KEY);
-        if (!raw) return false;
-        const parsed = JSON.parse(raw);
-        if (parsed && Array.isArray(parsed.loans) && parsed.loans.length >= 2) {
-          window.appState = parsed;
-          return true;
-        }
-      } catch (e) {}
-      return false;
-    }
-
     function syncTopInputsFromState() {
       document.getElementById('propertyName').value = appState.propertyName || '';
-      document.getElementById('propertyPrice').value = appState.propertyPrice || 35000;
+      document.getElementById('propertyPrice').value = appState.propertyPrice !== undefined ? appState.propertyPrice : 35000;
       document.getElementById('holdingMonths').value = appState.holdingMonths || 6;
       document.getElementById('holdingMonthsSlider').value = Math.min(60, appState.holdingMonths || 6);
-      document.getElementById('acqCost').value = appState.acqCost || 0;
+      document.getElementById('acqCost').value = appState.acqCost !== undefined ? appState.acqCost : 490;
       document.getElementById('autoAcqCost').checked = !!appState.autoAcqCost;
       document.getElementById('depositRate').value = appState.depositRate !== undefined ? appState.depositRate : 4.0;
     }
@@ -728,7 +729,7 @@
       applyStateToUI(DEFAULT_STATE);
       updateActiveSlotIndicator();
       closeSaveLoadModal();
-      showToast('초기 기본값으로 리셋되었습니다.');
+      showToast('모든 항목이 초기 기본값(만기일시상환)으로 초기화되었습니다.');
     }
 
     const HELP_CONTENTS = {
@@ -1390,7 +1391,6 @@
     // =========================================================================
 
     function updateAllCalculations() {
-      // Save current working state automatically on every calculation update
       saveWorkingStateToLocal();
 
       const m = Math.max(1, parseInt(appState.holdingMonths, 10) || 6);
@@ -2097,61 +2097,6 @@
           title: '창녕 코아루더파크 84㎡',
           savedAt: '2026. 11. 11.',
           state: JSON.parse(JSON.stringify(DEFAULT_STATE))
-        },
-        {
-          id: 'sample_2',
-          title: '천안 불당 지웰더샵 84㎡',
-          savedAt: '2026. 11. 11.',
-          state: {
-            propertyName: '천안 불당 지웰더샵 84㎡',
-            propertyPrice: 65000,
-            holdingMonths: 12,
-            chartMaxMonths: 36,
-            acqCost: 910,
-            autoAcqCost: true,
-            depositRate: 4.0,
-            loans: [
-              {
-                id: 'A',
-                name: '시중은행 주담대(원리금)',
-                color: '#0f766e',
-                rate: 4.1,
-                feeRate: 1.2,
-                feeMonths: 36,
-                feeMethod: 'sliding',
-                repaymentMethod: 'epi',
-                loanTermMonths: 360,
-                showAdvanced: true,
-                limit: 45500
-              },
-              {
-                id: 'B',
-                name: '경락잔금대출(만기일시)',
-                color: '#d97706',
-                rate: 5.4,
-                feeRate: 0.6,
-                feeMonths: 12,
-                feeMethod: 'sliding',
-                repaymentMethod: 'bullet',
-                loanTermMonths: 360,
-                showAdvanced: false,
-                limit: 52000
-              },
-              {
-                id: 'C',
-                name: '단위농협(만기일시)',
-                color: '#7c3aed',
-                rate: 4.8,
-                feeRate: 0.8,
-                feeMonths: 36,
-                feeMethod: 'sliding',
-                repaymentMethod: 'bullet',
-                loanTermMonths: 360,
-                showAdvanced: false,
-                limit: 45500
-              }
-            ]
-          }
         }
       ];
       localStorage.setItem(STORAGE_KEY, JSON.stringify(samples));
@@ -2513,11 +2458,8 @@
     }
 
     window.addEventListener('DOMContentLoaded', () => {
-      // 1. Check URL shared state first (?s=...)
       const loadedFromUrl = checkUrlStateOnLoad();
-      // 2. Otherwise restore last working state before refresh
       if (!loadedFromUrl) {
-        loadWorkingStateFromLocal();
         syncTopInputsFromState();
         renderLoanCards();
         updateAllCalculations();
