@@ -106,6 +106,23 @@
       color: #ffffff;
       transform: scale(1.08);
     }
+    /* Color Swatch Button */
+    .color-dot-btn {
+      width: 18px;
+      height: 18px;
+      border-radius: 9999px;
+      cursor: pointer;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+      border: 2px solid transparent;
+    }
+    .color-dot-btn:hover {
+      transform: scale(1.18);
+    }
+    .color-dot-active {
+      border-color: #0f172a;
+      box-shadow: 0 0 0 2px #ffffff inset;
+      transform: scale(1.15);
+    }
     .matrix-winner {
       border: 2px solid #0f766e !important;
       background-color: #ecfdf5 !important;
@@ -515,34 +532,24 @@
       <!-- Body -->
       <div class="p-5 overflow-y-auto space-y-5 flex-1">
         
-        <!-- 1. Firebase Cloud Room / PIN Sync Bar -->
-        <div class="p-4 rounded-xl bg-slate-900 text-white space-y-3">
-          <div class="flex flex-wrap items-center justify-between gap-2">
-            <div class="flex items-center gap-2">
-              <span id="modalCloudDot" class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
-              <span class="text-xs sm:text-sm font-bold">Firebase 실시간 클라우드 (my-loan-calc)</span>
+        <!-- 1. Simplified Firebase Cloud Sync ID Bar (No temporary push/pull) -->
+        <div class="p-3.5 rounded-xl bg-slate-900 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div class="flex items-center gap-2">
+            <span id="modalCloudDot" class="w-2.5 h-2.5 rounded-full bg-emerald-400 flex-shrink-0"></span>
+            <div>
+              <div class="text-xs sm:text-sm font-bold flex items-center gap-1.5">
+                <span>클라우드 실시간 동기화</span>
+                <span id="modalCloudStatusLabel" class="text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-emerald-300 font-semibold">연결됨</span>
+              </div>
+              <p class="text-[11px] text-slate-400 mt-0.5">PC와 스마트폰에 같은 ID를 입력하면 저장 목록이 자동 동기화됩니다.</p>
             </div>
-            <span id="modalCloudStatusLabel" class="text-[11px] px-2 py-0.5 rounded bg-slate-800 text-emerald-300 font-semibold">실시간 동기화 켜짐</span>
           </div>
 
-          <div class="grid grid-cols-1 sm:grid-cols-12 gap-2 items-center">
-            <div class="sm:col-span-7 flex items-center gap-2 bg-slate-800 rounded-xl px-3 py-2 border border-slate-700">
-              <span class="text-xs text-slate-400 whitespace-nowrap">동기화 ID(방 번호):</span>
-              <input type="text" id="syncRoomInput" value="minseop" class="bg-transparent text-white font-bold text-sm w-full focus:outline-none" placeholder="예: minseop" />
-              <button onclick="changeSyncRoom()" class="px-2.5 py-1 rounded-lg bg-teal-600 hover:bg-teal-500 text-xs font-bold whitespace-nowrap transition">변경</button>
-            </div>
-            <div class="sm:col-span-5 flex gap-1.5">
-              <button onclick="pushLiveStateToCloud()" class="flex-1 py-2.5 px-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-bold text-emerald-300 transition text-center">
-                ↑ 현재 화면 클라우드 전송
-              </button>
-              <button onclick="pullLiveStateFromCloud()" class="flex-1 py-2.5 px-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-bold text-amber-300 transition text-center">
-                ↓ 최근 전송화면 불러오기
-              </button>
-            </div>
+          <div class="flex items-center gap-1.5 bg-slate-800 rounded-xl px-3 py-1.5 border border-slate-700 self-start sm:self-center">
+            <span class="text-xs text-slate-400 whitespace-nowrap">동기화 ID:</span>
+            <input type="text" id="syncRoomInput" value="minseop" class="bg-transparent text-white font-bold text-sm w-28 sm:w-32 focus:outline-none" placeholder="예: minseop" />
+            <button onclick="changeSyncRoom()" class="px-2.5 py-1 rounded-lg bg-teal-600 hover:bg-teal-500 text-xs font-bold whitespace-nowrap transition">변경</button>
           </div>
-          <p class="text-[11px] text-slate-400 leading-normal">
-            PC와 스마트폰에서 동일한 <strong>동기화 ID(기본값: minseop)</strong>를 쓰면 아래 저장 목록이 0.1초 만에 서로 실시간으로 동기화됩니다.
-          </p>
         </div>
 
         <!-- 2. Save Current Form (Supports both Overwrite & New Save) -->
@@ -565,7 +572,7 @@
         <!-- 3. Saved List -->
         <div>
           <div class="flex items-center justify-between mb-2.5">
-            <h5 class="font-bold text-sm text-slate-700">저장된 물건 목록 (클라우드 실시간 연동)</h5>
+            <h5 class="font-bold text-sm text-slate-700">저장된 물건 목록</h5>
             <div class="flex items-center gap-2">
               <button onclick="exportPresetsJson()" class="text-xs font-semibold text-slate-600 hover:text-teal-700 underline">백업(.json)</button>
               <span class="text-slate-300">|</span>
@@ -607,18 +614,18 @@
     const STORAGE_KEY = 'loan_calc_pro_presets_v3';
     const ROOM_STORAGE_KEY = 'loan_calc_sync_room_v1';
 
-    // Tracks currently loaded/edited preset ID for 1-click overwrite
     window.currentActivePresetId = null;
 
+    // Distinct color palette for loans + quick color picker swatches
     const LOAN_PALETTE = [
       { id: 'A', color: '#0f766e', label: '청록' },
-      { id: 'B', color: '#b45309', label: '주황' },
-      { id: 'C', color: '#6d28d9', label: '보라' },
+      { id: 'B', color: '#d97706', label: '주황' },
+      { id: 'C', color: '#7c3aed', label: '보라' },
       { id: 'D', color: '#2563eb', label: '파랑' },
-      { id: 'E', color: '#e11d48', label: '로즈' },
-      { id: 'F', color: '#059669', label: '에메랄드' },
-      { id: 'G', color: '#4f46e5', label: '인디고' },
-      { id: 'H', color: '#ca8a04', label: '골드' }
+      { id: 'E', color: '#e11d48', label: '빨강' },
+      { id: 'F', color: '#16a34a', label: '초록' },
+      { id: 'G', color: '#db2777', label: '핑크' },
+      { id: 'H', color: '#334155', label: '차콜' }
     ];
 
     window.appState = {
@@ -646,7 +653,7 @@
         {
           id: 'B',
           name: '경락잔금대출(만기일시)',
-          color: '#b45309',
+          color: '#d97706',
           rate: 4.9,
           feeRate: 0.5,
           feeMonths: 12,
@@ -659,7 +666,7 @@
         {
           id: 'C',
           name: '2금융권(만기일시)',
-          color: '#6d28d9',
+          color: '#7c3aed',
           rate: 6.5,
           feeRate: 0.0,
           feeMonths: 36,
@@ -843,6 +850,7 @@
           <ul class="list-disc pl-5 space-y-2 text-sm">
             <li><strong>구간 확대(Zoom):</strong> 우측 상단 버튼을 눌러 단기/장기 구간을 확대할 수 있습니다.</li>
             <li><strong>점선 드래그 이동:</strong> 그래프 위의 세로 점선을 드래그하면 원하는 개월 수의 각 대출별 실질 비용이 바로 위 박스에 실시간으로 표시됩니다.</li>
+            <li><strong>선 색상 변경:</strong> 각 대출 카드 상단의 동그란 컬러칩을 누르면 그래프 선 색상을 보기 편하게 바꿀 수 있습니다.</li>
           </ul>
         `
       },
@@ -1002,7 +1010,7 @@
     }
 
     // =========================================================================
-    // DYNAMIC LOAN ADD / REMOVE & CARD RENDERING
+    // DYNAMIC LOAN ADD / REMOVE / COLOR CHANGE & CARD RENDERING
     // =========================================================================
 
     function addLoanItem() {
@@ -1012,10 +1020,23 @@
       }
 
       const usedIds = new Set(appState.loans.map(l => l.id));
-      let nextSpec = LOAN_PALETTE.find(p => !usedIds.has(p.id));
-      if (!nextSpec) {
-        const nextChar = String.fromCharCode(65 + appState.loans.length);
-        nextSpec = { id: nextChar, color: '#0f766e' };
+      const usedColors = new Set(appState.loans.map(l => (l.color || '').toLowerCase()));
+
+      let nextId = String.fromCharCode(65 + appState.loans.length);
+      for (const p of LOAN_PALETTE) {
+        if (!usedIds.has(p.id)) {
+          nextId = p.id;
+          break;
+        }
+      }
+
+      // Pick an unused color from palette first so lines are easy to distinguish
+      let nextColor = LOAN_PALETTE[appState.loans.length % LOAN_PALETTE.length].color;
+      for (const p of LOAN_PALETTE) {
+        if (!usedColors.has(p.color.toLowerCase())) {
+          nextColor = p.color;
+          break;
+        }
       }
 
       const lastLoan = appState.loans[appState.loans.length - 1] || {
@@ -1026,9 +1047,9 @@
       };
 
       appState.loans.push({
-        id: nextSpec.id,
-        name: `대출 ${nextSpec.id}`,
-        color: nextSpec.color,
+        id: nextId,
+        name: `대출 ${nextId}`,
+        color: nextColor,
         rate: Number((lastLoan.rate + 0.3).toFixed(1)),
         feeRate: lastLoan.feeRate,
         feeMonths: lastLoan.feeMonths,
@@ -1041,7 +1062,7 @@
 
       renderLoanCards();
       updateAllCalculations();
-      showToast(`'대출 ${nextSpec.id}' 항목이 추가되었습니다.`);
+      showToast(`'대출 ${nextId}' 항목이 추가되었습니다. 상단 컬러칩으로 색상을 바꿀 수 있습니다.`);
     }
 
     function removeLoanItem(idx) {
@@ -1054,6 +1075,13 @@
       renderLoanCards();
       updateAllCalculations();
       showToast(`'${removedName}' 항목이 삭제되었습니다.`);
+    }
+
+    function updateLoanColor(idx, newColor) {
+      if (!newColor) return;
+      appState.loans[idx].color = newColor;
+      renderLoanCards();
+      updateAllCalculations();
     }
 
     function toggleLoanAdvanced(idx) {
@@ -1075,6 +1103,20 @@
         const isAmortizing = loan.repaymentMethod !== 'bullet';
         const showAdv = !!loan.showAdvanced || isAmortizing;
         const extraCash = Math.max(0, (Number(loan.limit) || 0) - minLimit);
+        const currentColor = (loan.color || '#0f766e').toLowerCase();
+
+        const colorSwatchesHtml = LOAN_PALETTE.map(sw => {
+          const isSelected = sw.color.toLowerCase() === currentColor;
+          return `
+            <button
+              type="button"
+              onclick="updateLoanColor(${idx}, '${sw.color}')"
+              class="color-dot-btn ${isSelected ? 'color-dot-active' : ''}"
+              style="background-color: ${sw.color}"
+              title="${sw.label} 색상으로 변경"
+            ></button>
+          `;
+        }).join('');
 
         return `
           <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5 flex flex-col justify-between space-y-4 relative overflow-hidden" style="border-top: 5px solid ${loan.color}">
@@ -1105,6 +1147,23 @@
                   class="soft-input font-bold"
                   placeholder="대출 이름 입력"
                 />
+
+                <!-- Graph Line Color Selector Bar -->
+                <div class="no-export mt-2 flex items-center justify-between px-2.5 py-1.5 rounded-xl bg-slate-50 border border-slate-200/80">
+                  <span class="text-[11px] font-semibold text-slate-500">그래프 색상</span>
+                  <div class="flex items-center gap-1.5">
+                    ${colorSwatchesHtml}
+                    <label class="relative inline-flex items-center justify-center w-5 h-5 rounded-full bg-white border border-slate-300 cursor-pointer hover:scale-110 transition shadow-sm" title="직접 색상 고르기">
+                      <span class="text-[10px] font-bold text-slate-600">+</span>
+                      <input
+                        type="color"
+                        value="${loan.color}"
+                        onchange="updateLoanColor(${idx}, this.value)"
+                        class="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
+                      />
+                    </label>
+                  </div>
+                </div>
               </div>
 
               <div class="grid grid-cols-2 gap-3">
@@ -1535,7 +1594,7 @@
               <div class="p-2.5 rounded-lg bg-white border ${isBest ? 'border-teal-600 ring-1 ring-teal-600/30' : 'border-slate-200'}">
                 <div class="flex items-center justify-between gap-1 mb-1">
                   <div class="flex items-center gap-1.5 min-w-0">
-                    <span class="w-2 h-2 rounded-full flex-shrink-0" style="background-color: ${s.loan.color}"></span>
+                    <span class="w-2.5 h-2.5 rounded-full flex-shrink-0" style="background-color: ${s.loan.color}"></span>
                     <span class="text-xs font-bold text-slate-800 truncate">${escapeHtml(s.loan.name)}</span>
                   </div>
                   ${isBest
@@ -2018,7 +2077,7 @@
               {
                 id: 'B',
                 name: '경락잔금대출(만기일시)',
-                color: '#b45309',
+                color: '#d97706',
                 rate: 5.4,
                 feeRate: 0.6,
                 feeMonths: 12,
@@ -2031,7 +2090,7 @@
               {
                 id: 'C',
                 name: '단위농협(만기일시)',
-                color: '#6d28d9',
+                color: '#7c3aed',
                 rate: 4.8,
                 feeRate: 0.8,
                 feeMonths: 36,
@@ -2080,7 +2139,6 @@
       modal.classList.remove('flex');
     }
 
-    // 1-Click Quick Save / Overwrite directly from top bar
     async function quickSavePreset() {
       const title = (appState.propertyName || '이름 없는 물건').trim();
       appState.propertyName = title;
@@ -2089,9 +2147,7 @@
       const list = getSavedPresets();
       const dateStr = getNowDateString();
 
-      // Priority 1: Match by identical title
       let targetIdx = list.findIndex(item => item.title.trim() === title);
-      // Priority 2: Match by currently loaded preset ID
       if (targetIdx === -1 && window.currentActivePresetId) {
         targetIdx = list.findIndex(item => item.id === window.currentActivePresetId);
       }
@@ -2121,12 +2177,11 @@
       updateAllCalculations();
 
       if (window.syncPresetsToFirestore) {
-        await window.syncPresetsToFirestore(list, appState, true);
+        await window.syncPresetsToFirestore(list, true);
       }
       showToast(isOverwrite ? `'${title}' 항목에 덮어쓰기 저장되었습니다.` : `'${title}' 새 항목으로 저장되었습니다.`);
     }
 
-    // Save from inside the Modal (forceNew = false -> overwrite if same title/active ID)
     async function saveCurrentPreset(forceNew = false) {
       const titleInput = document.getElementById('savePresetTitleInput');
       const title = (titleInput.value || appState.propertyName || '이름 없는 물건').trim();
@@ -2167,12 +2222,11 @@
       updateAllCalculations();
 
       if (window.syncPresetsToFirestore) {
-        await window.syncPresetsToFirestore(list, appState, true);
+        await window.syncPresetsToFirestore(list, true);
       }
       showToast(existingIdx !== -1 ? `'${title}' 데이터를 덮어썼습니다.` : `'${title}' 새 항목으로 추가되었습니다.`);
     }
 
-    // Explicitly overwrite a specific slot in the list
     async function overwritePresetById(id) {
       const list = getSavedPresets();
       const idx = list.findIndex(item => item.id === id);
@@ -2195,7 +2249,7 @@
       updateAllCalculations();
 
       if (window.syncPresetsToFirestore) {
-        await window.syncPresetsToFirestore(list, appState, true);
+        await window.syncPresetsToFirestore(list, true);
       }
       showToast(`'${title}' 항목에 현재 화면 수치를 덮어썼습니다.`);
     }
@@ -2222,7 +2276,7 @@
       updateSavedCountBadge();
       renderSavedPresetsList();
       if (window.syncPresetsToFirestore) {
-        await window.syncPresetsToFirestore(list, appState, true);
+        await window.syncPresetsToFirestore(list, true);
       }
       showToast('저장된 항목을 삭제했습니다.');
     }
@@ -2304,7 +2358,7 @@
             updateSavedCountBadge();
             renderSavedPresetsList();
             if (window.syncPresetsToFirestore) {
-              await window.syncPresetsToFirestore(imported, appState, true);
+              await window.syncPresetsToFirestore(imported, true);
             }
             showToast(`${imported.length}개의 물건 비교 데이터를 복원 및 동기화했습니다.`);
           }
@@ -2421,7 +2475,7 @@
   <!-- ========================================================================= -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-    import { getFirestore, doc, setDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+    import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyBHWR-jeQW_eTxDePEYnawqUP-33SK3XCo",
@@ -2445,13 +2499,13 @@
       if (connected) {
         if (dot) dot.className = 'w-2 h-2 rounded-full bg-emerald-500';
         if (text) text.textContent = `☁️ 실시간 연동됨 (${currentRoom})`;
-        if (modalDot) modalDot.className = 'w-2.5 h-2.5 rounded-full bg-emerald-400';
-        if (modalLabel) modalLabel.textContent = message || '실시간 동기화 켜짐';
+        if (modalDot) modalDot.className = 'w-2.5 h-2.5 rounded-full bg-emerald-400 flex-shrink-0';
+        if (modalLabel) modalLabel.textContent = message || '연결됨';
       } else {
         if (dot) dot.className = 'w-2 h-2 rounded-full bg-rose-500';
         if (text) text.textContent = '로컬 저장 모드';
-        if (modalDot) modalDot.className = 'w-2.5 h-2.5 rounded-full bg-rose-400';
-        if (modalLabel) modalLabel.textContent = message || '오프라인/권한 확인 필요';
+        if (modalDot) modalDot.className = 'w-2.5 h-2.5 rounded-full bg-rose-400 flex-shrink-0';
+        if (modalLabel) modalLabel.textContent = message || '오프라인';
       }
     }
 
@@ -2464,7 +2518,7 @@
 
       const roomRef = doc(db, 'loan_workspaces', currentRoom);
       unsubscribeRoom = onSnapshot(roomRef, (snap) => {
-        setCloudStatusUI(true, `방 '${currentRoom}' 실시간 연결됨`);
+        setCloudStatusUI(true, `ID '${currentRoom}' 연동됨`);
         if (snap.exists()) {
           const data = snap.data();
           if (Array.isArray(data.presets)) {
@@ -2476,23 +2530,21 @@
           const initialPresets = window.getSavedPresets ? window.getSavedPresets() : [];
           setDoc(roomRef, {
             presets: initialPresets,
-            liveState: window.appState,
             updatedAt: new Date().toISOString()
           }, { merge: true }).catch(() => {});
         }
       }, (err) => {
         console.warn('Firestore sync error:', err);
-        setCloudStatusUI(false, 'Firestore 규칙 확인 필요');
+        setCloudStatusUI(false, '규칙 확인 필요');
       });
     }
 
-    window.syncPresetsToFirestore = async function(presetsList, liveStateObj, silentToast = false) {
+    window.syncPresetsToFirestore = async function(presetsList, silentToast = false) {
       if (!db) return;
       try {
         const roomRef = doc(db, 'loan_workspaces', currentRoom);
         await setDoc(roomRef, {
           presets: presetsList,
-          liveState: liveStateObj || window.appState,
           updatedAt: new Date().toISOString()
         }, { merge: true });
         if (!silentToast) {
@@ -2501,37 +2553,6 @@
       } catch (e) {
         console.error(e);
         window.showToast('기기에는 저장되었으나 클라우드 전송에 실패했습니다.');
-      }
-    };
-
-    window.pushLiveStateToCloud = async function() {
-      if (!db) return;
-      try {
-        const roomRef = doc(db, 'loan_workspaces', currentRoom);
-        await setDoc(roomRef, {
-          liveState: window.appState,
-          updatedAt: new Date().toISOString()
-        }, { merge: true });
-        window.showToast(`현재 화면 세팅을 클라우드(${currentRoom})로 전송했습니다!`);
-      } catch (e) {
-        window.showToast('클라우드 화면 전송에 실패했습니다.');
-      }
-    };
-
-    window.pullLiveStateFromCloud = async function() {
-      if (!db) return;
-      try {
-        const roomRef = doc(db, 'loan_workspaces', currentRoom);
-        const snap = await getDoc(roomRef);
-        if (snap.exists() && snap.data().liveState) {
-          window.applyStateToUI(snap.data().liveState);
-          window.closeSaveLoadModal();
-          window.showToast(`클라우드(${currentRoom})에서 최근 화면을 불러왔습니다!`);
-        } else {
-          window.showToast('아직 전송된 화면 데이터가 없습니다.');
-        }
-      } catch (e) {
-        window.showToast('클라우드 불러오기에 실패했습니다.');
       }
     };
 
