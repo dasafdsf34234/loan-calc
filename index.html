@@ -9,7 +9,7 @@
   <title>대출비교계산기 - 보유기간·상환방식·기회비용 분석</title>
   <!-- Pretendard Font -->
   <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
-  <!-- Tailwind CSS CDN (디자인 엔진) -->
+  <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- html2canvas for JPG Export -->
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
@@ -25,7 +25,6 @@
       word-break: keep-all;
       margin: 0;
     }
-    /* SVG 아이콘이 어떤 환경에서도 거대해지지 않도록 강제 고정 */
     svg:not(#interactiveChartSvg) {
       max-width: 24px;
       max-height: 24px;
@@ -149,14 +148,10 @@
 
       <!-- Top Quick Action Buttons -->
       <div class="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
-        <button onclick="pushLiveStateToCloud()" class="hidden sm:inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 transition" title="지금 보고 있는 화면을 클라우드로 즉시 전송합니다">
-          <svg width="16" height="16" class="w-3.5 h-3.5 text-emerald-700" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
-          <span>화면 동기화</span>
-        </button>
-
-        <button onclick="copyShareUrl()" class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs sm:text-sm font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 transition" title="현재 세팅이 담긴 인터넷 주소(URL) 복사">
-          <svg width="16" height="16" class="w-4 h-4 text-teal-700" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
-          <span class="hidden sm:inline">링크복사</span>
+        <!-- Quick Overwrite Save Button -->
+        <button onclick="quickSavePreset()" class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs sm:text-sm font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm transition" title="현재 물건에 바로 덮어쓰기 저장">
+          <svg width="15" height="15" class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+          <span id="quickSaveBtnLabel">덮어쓰기</span>
         </button>
 
         <button onclick="openSaveLoadModal()" class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs sm:text-sm font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 transition">
@@ -165,14 +160,19 @@
           <span id="savedCountBadge" class="ml-0.5 px-1.5 py-0.2 bg-teal-700 text-white rounded-full text-[10px]">0</span>
         </button>
 
-        <button onclick="exportToJpg(false)" class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs sm:text-sm font-semibold bg-teal-700 hover:bg-teal-800 text-white shadow-sm transition">
-          <svg width="16" height="16" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-          <span>JPG 저장</span>
+        <button onclick="copyShareUrl()" class="hidden sm:inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs sm:text-sm font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 transition" title="현재 세팅이 담긴 인터넷 주소(URL) 복사">
+          <svg width="16" height="16" class="w-4 h-4 text-teal-700" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
+          <span class="hidden md:inline">링크복사</span>
         </button>
 
-        <button onclick="exportToJpg(true)" class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs sm:text-sm font-semibold bg-amber-600 hover:bg-amber-700 text-white shadow-sm transition" title="이미지 공유하기">
+        <button onclick="exportToJpg(false)" class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs sm:text-sm font-semibold bg-teal-700 hover:bg-teal-800 text-white shadow-sm transition">
+          <svg width="16" height="16" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+          <span class="hidden sm:inline">JPG 저장</span>
+        </button>
+
+        <button onclick="exportToJpg(true)" class="hidden sm:inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs sm:text-sm font-semibold bg-amber-600 hover:bg-amber-700 text-white shadow-sm transition" title="이미지 공유하기">
           <svg width="16" height="16" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/></svg>
-          <span class="hidden sm:inline">공유</span>
+          <span class="hidden md:inline">공유</span>
         </button>
       </div>
     </div>
@@ -186,6 +186,7 @@
       <div>
         <div class="inline-flex items-center gap-2 mb-1">
           <span id="propertyBadgeDisplay" class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-teal-800 text-white">기본 물건 비교</span>
+          <span id="activeSlotBadge" class="hidden px-2 py-0.5 rounded-md text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">불러온 항목 편집중</span>
           <span id="timestampDisplay" class="text-xs text-slate-400"></span>
         </div>
         <h2 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">대출비교계산기</h2>
@@ -218,7 +219,7 @@
             <button type="button" onclick="openHelpModal('property_name')" class="q-badge" title="설명 보기">?</button>
           </label>
           <input type="text" id="propertyName" value="창녕 코아루더파크 84㎡" placeholder="예: 송파 헬리오시티 / 경매 물건" class="soft-input" oninput="handleInputChange()" />
-          <p class="mt-1.5 text-xs text-slate-500">저장 및 JPG 이미지 출력 시 상단 제목으로 표시됩니다.</p>
+          <p class="mt-1.5 text-xs text-slate-500">같은 이름이면 저장 시 자동으로 덮어씌워집니다.</p>
         </div>
 
         <!-- Property Price -->
@@ -452,17 +453,17 @@
 
   <!-- Mobile Bottom Floating Quick Bar (Hidden on Desktop) -->
   <div class="no-export fixed bottom-0 inset-x-0 z-20 lg:hidden bg-white/95 backdrop-blur border-t border-slate-200 px-3 py-2.5 flex items-center justify-between gap-1.5 shadow-lg">
+    <button onclick="quickSavePreset()" class="flex-1 py-2.5 px-2 rounded-xl bg-emerald-600 active:bg-emerald-700 text-white font-bold text-xs flex items-center justify-center gap-1 shadow-sm">
+      <svg width="15" height="15" class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+      <span>덮어쓰기</span>
+    </button>
     <button onclick="openSaveLoadModal()" class="flex-1 py-2.5 px-2 rounded-xl bg-slate-100 active:bg-slate-200 text-slate-800 font-bold text-xs flex items-center justify-center gap-1">
       <svg width="16" height="16" class="w-4 h-4 text-teal-700" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"/></svg>
-      <span>클라우드 저장소</span>
+      <span>저장소 목록</span>
     </button>
-    <button onclick="copyShareUrl()" class="py-2.5 px-2.5 rounded-xl bg-slate-100 active:bg-slate-200 text-slate-700 font-bold text-xs flex items-center justify-center gap-1">
-      <svg width="16" height="16" class="w-4 h-4 text-teal-700" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
-      <span>링크</span>
-    </button>
-    <button onclick="exportToJpg(false)" class="flex-1 py-2.5 px-2 rounded-xl bg-teal-700 active:bg-teal-800 text-white font-bold text-xs flex items-center justify-center gap-1 shadow-sm">
+    <button onclick="exportToJpg(false)" class="py-2.5 px-2.5 rounded-xl bg-teal-700 active:bg-teal-800 text-white font-bold text-xs flex items-center justify-center gap-1 shadow-sm">
       <svg width="16" height="16" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-      <span>JPG 저장</span>
+      <span>JPG</span>
     </button>
     <button onclick="exportToJpg(true)" class="py-2.5 px-2.5 rounded-xl bg-amber-600 active:bg-amber-700 text-white font-bold text-xs flex items-center justify-center gap-1 shadow-sm">
       <svg width="16" height="16" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/></svg>
@@ -544,13 +545,19 @@
           </p>
         </div>
 
-        <!-- 2. Save Current Form -->
+        <!-- 2. Save Current Form (Supports both Overwrite & New Save) -->
         <div class="p-4 rounded-xl bg-teal-50/70 border border-teal-200">
-          <label class="block text-xs sm:text-sm font-bold text-teal-950 mb-2">현재 입력된 아파트/물건 비교 저장하기</label>
+          <div class="flex items-center justify-between mb-2">
+            <label class="text-xs sm:text-sm font-bold text-teal-950">현재 입력된 아파트/물건 비교 저장하기</label>
+            <span class="text-[11px] text-teal-700 font-semibold">※ 같은 이름이면 자동으로 덮어씁니다</span>
+          </div>
           <div class="flex flex-col sm:flex-row gap-2">
             <input type="text" id="savePresetTitleInput" placeholder="예: 창녕 코아루더파크 84㎡ (경락잔금 비교)" class="flex-1 px-3.5 py-2.5 rounded-xl bg-white border border-teal-300 text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-600" />
-            <button onclick="saveCurrentPreset()" class="px-5 py-2.5 rounded-xl bg-teal-700 hover:bg-teal-800 text-white font-bold text-sm whitespace-nowrap shadow-sm transition">
-              + 클라우드 & 기기에 저장
+            <button onclick="saveCurrentPreset(false)" class="px-4 py-2.5 rounded-xl bg-teal-700 hover:bg-teal-800 text-white font-bold text-sm whitespace-nowrap shadow-sm transition">
+              저장 (덮어쓰기)
+            </button>
+            <button onclick="saveCurrentPreset(true)" class="px-3.5 py-2.5 rounded-xl bg-white hover:bg-slate-100 text-teal-800 border border-teal-300 font-bold text-xs sm:text-sm whitespace-nowrap transition" title="이름이 같아도 무조건 새 항목으로 추가합니다">
+              + 새 항목으로 추가
             </button>
           </div>
         </div>
@@ -578,7 +585,7 @@
 
       <!-- Footer -->
       <div class="px-5 py-3 bg-slate-50 border-t border-slate-200 flex justify-between items-center">
-        <span class="text-xs text-slate-500">팁: 물건마다 금리 조건을 저장해두고 현장이나 은행에서 바로 비교하세요.</span>
+        <span class="text-xs text-slate-500">팁: 목록의 [덮어쓰기]를 누르면 해당 물건에 현재 화면 수치가 즉시 저장됩니다.</span>
         <button onclick="closeSaveLoadModal()" class="px-4 py-2 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-800 font-semibold text-sm transition">
           닫기
         </button>
@@ -599,6 +606,9 @@
   <script>
     const STORAGE_KEY = 'loan_calc_pro_presets_v3';
     const ROOM_STORAGE_KEY = 'loan_calc_sync_room_v1';
+
+    // Tracks currently loaded/edited preset ID for 1-click overwrite
+    window.currentActivePresetId = null;
 
     const LOAN_PALETTE = [
       { id: 'A', color: '#0f766e', label: '청록' },
@@ -727,10 +737,10 @@
         `
       },
       property_name: {
-        title: '아파트 / 물건명 메모',
+        title: '아파트 / 물건명 메모 (자동 덮어쓰기 기준)',
         html: `
           <p>비교하려는 아파트 단지명, 동·호수 또는 경매 사건번호를 적어두세요.</p>
-          <p>상단 <strong>[저장소]</strong>에 물건별로 클라우드 저장해 두거나 <strong>[JPG 저장]</strong>으로 이미지를 뽑아 카톡으로 공유할 때 맨 위에 제목으로 깔끔하게 표시됩니다.</p>
+          <p><strong>덮어쓰기 안내:</strong> 이미 저장된 물건과 이름이 같으면 새 파일이 계속 추가되지 않고 기존 항목에 깔끔하게 덮어씌워집니다.</p>
         `
       },
       property_price: {
@@ -1952,8 +1962,13 @@
     }
 
     // =========================================================================
-    // SAVE & LOAD SYSTEM (LOCALSTORAGE + FIREBASE REALTIME CLOUD)
+    // SAVE & LOAD SYSTEM (SMART OVERWRITE + LOCALSTORAGE + FIREBASE CLOUD)
     // =========================================================================
+
+    function getNowDateString() {
+      const now = new Date();
+      return `${now.getFullYear()}. ${now.getMonth() + 1}. ${now.getDate()}. ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+    }
 
     function getSavedPresets() {
       try {
@@ -1970,13 +1985,13 @@
       const samples = [
         {
           id: 'sample_1',
-          title: '창녕 코아루더파크 84㎡ (단기 6개월 매도 비교)',
+          title: '창녕 코아루더파크 84㎡',
           savedAt: '2026. 11. 11.',
           state: JSON.parse(JSON.stringify(appState))
         },
         {
           id: 'sample_2',
-          title: '천안 불당동 아파트 경매 (원리금균등 vs 만기일시)',
+          title: '천안 불당 지웰더샵 84㎡',
           savedAt: '2026. 11. 11.',
           state: {
             propertyName: '천안 불당 지웰더샵 84㎡',
@@ -2039,6 +2054,16 @@
       document.getElementById('savedCountBadge').textContent = list.length;
     }
 
+    function updateActiveSlotIndicator() {
+      const badge = document.getElementById('activeSlotBadge');
+      if (!badge) return;
+      if (window.currentActivePresetId) {
+        badge.classList.remove('hidden');
+      } else {
+        badge.classList.add('hidden');
+      }
+    }
+
     function openSaveLoadModal() {
       document.getElementById('savePresetTitleInput').value = appState.propertyName || '';
       const currentRoom = localStorage.getItem(ROOM_STORAGE_KEY) || 'minseop';
@@ -2055,34 +2080,124 @@
       modal.classList.remove('flex');
     }
 
-    async function saveCurrentPreset() {
+    // 1-Click Quick Save / Overwrite directly from top bar
+    async function quickSavePreset() {
+      const title = (appState.propertyName || '이름 없는 물건').trim();
+      appState.propertyName = title;
+      document.getElementById('propertyName').value = title;
+
+      const list = getSavedPresets();
+      const dateStr = getNowDateString();
+
+      // Priority 1: Match by identical title
+      let targetIdx = list.findIndex(item => item.title.trim() === title);
+      // Priority 2: Match by currently loaded preset ID
+      if (targetIdx === -1 && window.currentActivePresetId) {
+        targetIdx = list.findIndex(item => item.id === window.currentActivePresetId);
+      }
+
+      let isOverwrite = false;
+      if (targetIdx !== -1) {
+        list[targetIdx].title = title;
+        list[targetIdx].savedAt = dateStr;
+        list[targetIdx].state = JSON.parse(JSON.stringify(appState));
+        window.currentActivePresetId = list[targetIdx].id;
+        isOverwrite = true;
+      } else {
+        const newEntry = {
+          id: 'preset_' + Date.now(),
+          title,
+          savedAt: dateStr,
+          state: JSON.parse(JSON.stringify(appState))
+        };
+        list.unshift(newEntry);
+        window.currentActivePresetId = newEntry.id;
+      }
+
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+      updateSavedCountBadge();
+      updateActiveSlotIndicator();
+      renderSavedPresetsList();
+      updateAllCalculations();
+
+      if (window.syncPresetsToFirestore) {
+        await window.syncPresetsToFirestore(list, appState, true);
+      }
+      showToast(isOverwrite ? `'${title}' 항목에 덮어쓰기 저장되었습니다.` : `'${title}' 새 항목으로 저장되었습니다.`);
+    }
+
+    // Save from inside the Modal (forceNew = false -> overwrite if same title/active ID)
+    async function saveCurrentPreset(forceNew = false) {
       const titleInput = document.getElementById('savePresetTitleInput');
       const title = (titleInput.value || appState.propertyName || '이름 없는 물건').trim();
       appState.propertyName = title;
       document.getElementById('propertyName').value = title;
 
       const list = getSavedPresets();
-      const now = new Date();
-      const dateStr = `${now.getFullYear()}. ${now.getMonth() + 1}. ${now.getDate()}. ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+      const dateStr = getNowDateString();
 
-      const newEntry = {
-        id: 'preset_' + Date.now(),
-        title,
-        savedAt: dateStr,
-        state: JSON.parse(JSON.stringify(appState))
-      };
+      let existingIdx = -1;
+      if (!forceNew) {
+        existingIdx = list.findIndex(item => item.title.trim() === title);
+        if (existingIdx === -1 && window.currentActivePresetId) {
+          existingIdx = list.findIndex(item => item.id === window.currentActivePresetId);
+        }
+      }
 
-      list.unshift(newEntry);
+      if (existingIdx !== -1) {
+        list[existingIdx].title = title;
+        list[existingIdx].savedAt = dateStr;
+        list[existingIdx].state = JSON.parse(JSON.stringify(appState));
+        window.currentActivePresetId = list[existingIdx].id;
+      } else {
+        const newEntry = {
+          id: 'preset_' + Date.now(),
+          title,
+          savedAt: dateStr,
+          state: JSON.parse(JSON.stringify(appState))
+        };
+        list.unshift(newEntry);
+        window.currentActivePresetId = newEntry.id;
+      }
+
       localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
       updateSavedCountBadge();
+      updateActiveSlotIndicator();
       renderSavedPresetsList();
       updateAllCalculations();
 
       if (window.syncPresetsToFirestore) {
-        await window.syncPresetsToFirestore(list, appState);
-      } else {
-        showToast(`'${title}' 비교 데이터가 저장되었습니다.`);
+        await window.syncPresetsToFirestore(list, appState, true);
       }
+      showToast(existingIdx !== -1 ? `'${title}' 데이터를 덮어썼습니다.` : `'${title}' 새 항목으로 추가되었습니다.`);
+    }
+
+    // Explicitly overwrite a specific slot in the list
+    async function overwritePresetById(id) {
+      const list = getSavedPresets();
+      const idx = list.findIndex(item => item.id === id);
+      if (idx === -1) return;
+
+      const title = (appState.propertyName || list[idx].title || '이름 없는 물건').trim();
+      appState.propertyName = title;
+      document.getElementById('propertyName').value = title;
+      document.getElementById('savePresetTitleInput').value = title;
+
+      list[idx].title = title;
+      list[idx].savedAt = getNowDateString();
+      list[idx].state = JSON.parse(JSON.stringify(appState));
+      window.currentActivePresetId = id;
+
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+      updateSavedCountBadge();
+      updateActiveSlotIndicator();
+      renderSavedPresetsList();
+      updateAllCalculations();
+
+      if (window.syncPresetsToFirestore) {
+        await window.syncPresetsToFirestore(list, appState, true);
+      }
+      showToast(`'${title}' 항목에 현재 화면 수치를 덮어썼습니다.`);
     }
 
     function loadPresetById(id) {
@@ -2090,18 +2205,24 @@
       const found = list.find(item => item.id === id);
       if (!found) return;
 
+      window.currentActivePresetId = found.id;
       applyStateToUI(found.state);
+      updateActiveSlotIndicator();
       closeSaveLoadModal();
-      showToast(`'${found.title}' 데이터를 불러왔습니다.`);
+      showToast(`'${found.title}' 데이터를 불러왔습니다. 수정 후 [덮어쓰기]를 누르세요.`);
     }
 
     async function deletePresetById(id) {
+      if (window.currentActivePresetId === id) {
+        window.currentActivePresetId = null;
+        updateActiveSlotIndicator();
+      }
       const list = getSavedPresets().filter(item => item.id !== id);
       localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
       updateSavedCountBadge();
       renderSavedPresetsList();
       if (window.syncPresetsToFirestore) {
-        await window.syncPresetsToFirestore(list, appState);
+        await window.syncPresetsToFirestore(list, appState, true);
       }
       showToast('저장된 항목을 삭제했습니다.');
     }
@@ -2124,11 +2245,14 @@
         const st = item.state;
         const loanSummary = (st.loans || []).map(l => `${l.name}(${l.rate}%)`).join(' · ');
         const depRateText = st.depositRate !== undefined ? `예금 ${st.depositRate}%` : '';
+        const isCurrentActive = window.currentActivePresetId === item.id;
+
         return `
-          <div class="p-3.5 rounded-xl bg-white border border-slate-200 hover:border-teal-600/60 transition flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm">
+          <div class="p-3.5 rounded-xl bg-white border ${isCurrentActive ? 'border-emerald-500 ring-1 ring-emerald-500/30 bg-emerald-50/20' : 'border-slate-200 hover:border-teal-600/60'} transition flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm">
             <div class="min-w-0">
               <div class="flex items-center gap-2">
                 <span class="font-bold text-slate-900 text-sm sm:text-base truncate">${escapeHtml(item.title)}</span>
+                ${isCurrentActive ? '<span class="px-1.5 py-0.5 text-[10px] font-bold bg-emerald-600 text-white rounded">현재 선택됨</span>' : ''}
                 <span class="text-[11px] text-slate-400 flex-shrink-0">${item.savedAt}</span>
               </div>
               <div class="mt-1 text-xs text-slate-600 flex flex-wrap items-center gap-x-2 gap-y-1">
@@ -2141,8 +2265,11 @@
               </div>
             </div>
             <div class="flex items-center gap-1.5 self-end sm:self-center flex-shrink-0">
-              <button onclick="loadPresetById('${item.id}')" class="px-3.5 py-1.5 rounded-lg bg-teal-700 hover:bg-teal-800 text-white font-bold text-xs transition">
+              <button onclick="loadPresetById('${item.id}')" class="px-3 py-1.5 rounded-lg bg-teal-700 hover:bg-teal-800 text-white font-bold text-xs transition">
                 불러오기
+              </button>
+              <button onclick="overwritePresetById('${item.id}')" class="px-2.5 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 font-bold text-xs transition" title="현재 화면의 수치로 이 항목에 덮어씁니다">
+                덮어쓰기
               </button>
               <button onclick="deletePresetById('${item.id}')" class="px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-rose-50 hover:text-rose-600 text-slate-500 font-semibold text-xs transition">
                 삭제
@@ -2177,7 +2304,7 @@
             updateSavedCountBadge();
             renderSavedPresetsList();
             if (window.syncPresetsToFirestore) {
-              await window.syncPresetsToFirestore(imported, appState);
+              await window.syncPresetsToFirestore(imported, appState, true);
             }
             showToast(`${imported.length}개의 물건 비교 데이터를 복원 및 동기화했습니다.`);
           }
@@ -2359,7 +2486,7 @@
       });
     }
 
-    window.syncPresetsToFirestore = async function(presetsList, liveStateObj) {
+    window.syncPresetsToFirestore = async function(presetsList, liveStateObj, silentToast = false) {
       if (!db) return;
       try {
         const roomRef = doc(db, 'loan_workspaces', currentRoom);
@@ -2368,7 +2495,9 @@
           liveState: liveStateObj || window.appState,
           updatedAt: new Date().toISOString()
         }, { merge: true });
-        window.showToast(`클라우드(${currentRoom})에 실시간 저장되었습니다.`);
+        if (!silentToast) {
+          window.showToast(`클라우드(${currentRoom})에 실시간 저장되었습니다.`);
+        }
       } catch (e) {
         console.error(e);
         window.showToast('기기에는 저장되었으나 클라우드 전송에 실패했습니다.');
