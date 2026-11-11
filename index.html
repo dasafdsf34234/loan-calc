@@ -1,0 +1,2431 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="theme-color" content="#0f766e" />
+  <title>대출비교계산기 - 보유기간·상환방식·기회비용 분석</title>
+  <!-- Pretendard Font -->
+  <link rel="stylesheet" as="style" crossorigin href="[https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css](https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css)" />
+  <!-- Tailwind CSS -->
+  <script src="[https://cdn.tailwindcss.com](https://cdn.tailwindcss.com)"></script>
+  <!-- html2canvas for JPG Export -->
+  <script src="[https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js](https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js)"></script>
+  <style>
+    :root {
+      --font-sans: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, 'Helvetica Neue', 'Segoe UI', 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', sans-serif;
+    }
+    body {
+      font-family: var(--font-sans);
+      background-color: #f2f4f7;
+      color: #191f28;
+      -webkit-tap-highlight-color: transparent;
+      word-break: keep-all;
+    }
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 9999px;
+    }
+    .soft-input {
+      background-color: #f3f5f8;
+      border: 1px solid #e5e8eb;
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: #191f28;
+      width: 100%;
+      transition: all 0.15s ease;
+    }
+    .soft-input:focus {
+      outline: none;
+      background-color: #ffffff;
+      border-color: #0f766e;
+      box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.12);
+    }
+    .soft-select {
+      background-color: #f3f5f8;
+      border: 1px solid #e5e8eb;
+      border-radius: 10px;
+      padding: 10px 34px 10px 12px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #191f28;
+      width: 100%;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='[http://www.w3.org/2000/svg](http://www.w3.org/2000/svg)' fill='none' viewBox='0 0 24 24' stroke='%2364748b' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 10px center;
+      background-size: 16px;
+      transition: all 0.15s ease;
+    }
+    .soft-select:focus {
+      outline: none;
+      background-color: #ffffff;
+      border-color: #0f766e;
+      box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.12);
+    }
+    .q-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 18px;
+      height: 18px;
+      border-radius: 9999px;
+      background-color: #e2e8f0;
+      color: #475569;
+      font-size: 11px;
+      font-weight: 700;
+      margin-left: 5px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      vertical-align: middle;
+      line-height: 1;
+      user-select: none;
+    }
+    .q-badge:hover, .q-badge:active {
+      background-color: #0f766e;
+      color: #ffffff;
+      transform: scale(1.08);
+    }
+    .matrix-winner {
+      border: 2px solid #0f766e !important;
+      background-color: #ecfdf5 !important;
+      color: #065f46 !important;
+      font-weight: 700 !important;
+    }
+    .modal-backdrop {
+      background-color: rgba(15, 23, 42, 0.55);
+      backdrop-filter: blur(2px);
+    }
+    .exporting-jpg .no-export {
+      display: none !important;
+    }
+    .exporting-jpg {
+      background-color: #f2f4f7 !important;
+      padding: 20px !important;
+    }
+    .interactive-chart-svg {
+      touch-action: pan-y;
+      cursor: ew-resize;
+    }
+  </style>
+</head>
+<body class="min-h-screen pb-24 lg:pb-16">
+
+  <!-- Top Sticky Header Bar -->
+  <header class="sticky top-0 z-30 bg-white/95 backdrop-blur border-b border-slate-200">
+    <div class="max-w-7xl mx-auto px-3 sm:px-6 h-14 flex items-center justify-between gap-2">
+      <div class="flex items-center gap-2 min-w-0">
+        <span class="w-2.5 h-6 rounded-full bg-teal-700 flex-shrink-0"></span>
+        <h1 class="font-bold text-slate-900 text-base sm:text-lg truncate">대출비교계산기</h1>
+        <span class="hidden md:inline-block text-xs font-medium px-2 py-0.5 bg-teal-50 text-teal-800 rounded-md border border-teal-200">기회비용 반영</span>
+
+        <!-- Cloud Sync Status Pill -->
+        <button onclick="openSaveLoadModal()" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200 hover:bg-emerald-100 transition" title="클라우드 실시간 동기화 설정 및 저장소 열기">
+          <span id="cloudStatusDot" class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+          <span id="cloudStatusText">클라우드 연결중...</span>
+        </button>
+      </div>
+
+      <!-- Top Quick Action Buttons -->
+      <div class="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
+        <button onclick="pushLiveStateToCloud()" class="hidden sm:inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 transition" title="지금 보고 있는 화면을 클라우드로 즉시 전송합니다">
+          <svg class="w-3.5 h-3.5 text-emerald-700" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
+          <span>화면 동기화</span>
+        </button>
+
+        <button onclick="copyShareUrl()" class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs sm:text-sm font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 transition" title="현재 세팅이 담긴 인터넷 주소(URL) 복사">
+          <svg class="w-4 h-4 text-teal-700" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
+          <span class="hidden sm:inline">링크복사</span>
+        </button>
+
+        <button onclick="openSaveLoadModal()" class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs sm:text-sm font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 transition">
+          <svg class="w-4 h-4 text-teal-700" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>
+          <span>저장소</span>
+          <span id="savedCountBadge" class="ml-0.5 px-1.5 py-0.2 bg-teal-700 text-white rounded-full text-[10px]">0</span>
+        </button>
+
+        <button onclick="exportToJpg(false)" class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs sm:text-sm font-semibold bg-teal-700 hover:bg-teal-800 text-white shadow-sm transition">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+          <span>JPG 저장</span>
+        </button>
+
+        <button onclick="downloadStandaloneHtml()" class="hidden xl:inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 hover:bg-slate-900 text-white shadow-sm transition" title="스마트폰/GitHub 업로드용 단일 HTML 파일 다운로드">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/></svg>
+          <span>HTML 다운로드</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Capture Container for JPG Export -->
+  <main id="captureArea" class="max-w-7xl mx-auto px-4 sm:px-6 pt-6 pb-8 space-y-6">
+
+    <!-- Title & Intro Banner -->
+    <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+      <div>
+        <div class="inline-flex items-center gap-2 mb-1">
+          <span id="propertyBadgeDisplay" class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-teal-800 text-white">기본 물건 비교</span>
+          <span id="timestampDisplay" class="text-xs text-slate-400"></span>
+        </div>
+        <h2 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">대출비교계산기</h2>
+        <p class="mt-1.5 text-sm sm:text-base text-slate-600 leading-relaxed">
+          보유 기간 안에 실제로 나가는 <strong class="text-slate-800 font-semibold">누적 이자</strong>와 <strong class="text-slate-800 font-semibold">중도상환 수수료</strong>, 그리고 대출금 차액으로 확보한 <strong class="text-teal-700 font-semibold">현금의 예금 이자(기회비용)</strong>까지 합산하여 비교합니다.
+        </p>
+      </div>
+
+      <!-- Quick Guide Button for Help -->
+      <div class="no-export flex flex-wrap gap-2">
+        <button onclick="openHelpModal('repayment_all')" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white border border-slate-200 shadow-sm text-xs sm:text-sm font-semibold text-slate-700 hover:border-teal-600 hover:text-teal-700 transition">
+          <span class="w-4 h-4 rounded-full bg-teal-700 text-white text-[11px] flex items-center justify-center font-bold">?</span>
+          <span>상환방식 & 기회비용 해설</span>
+        </button>
+        <button onclick="openHelpModal('mobile_install')" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white border border-slate-200 shadow-sm text-xs sm:text-sm font-semibold text-slate-700 hover:border-teal-600 hover:text-teal-700 transition">
+          <svg class="w-4 h-4 text-teal-700" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+          <span>스마트폰 앱처럼 설치</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Section 1: Base Property & Holding Period Settings -->
+    <section class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5 sm:p-6">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-5">
+        
+        <!-- Property Name / Memo -->
+        <div>
+          <label class="block text-xs sm:text-sm font-semibold text-slate-600 mb-1.5">
+            아파트 / 물건명 메모
+            <button type="button" onclick="openHelpModal('property_name')" class="q-badge" title="설명 보기">?</button>
+          </label>
+          <input type="text" id="propertyName" value="창녕 코아루더파크 84㎡" placeholder="예: 송파 헬리오시티 / 경매 물건" class="soft-input" oninput="handleInputChange()" />
+          <p class="mt-1.5 text-xs text-slate-500">저장 및 JPG 이미지 출력 시 상단 제목으로 표시됩니다.</p>
+        </div>
+
+        <!-- Property Price -->
+        <div>
+          <div class="flex items-center justify-between mb-1.5">
+            <label class="text-xs sm:text-sm font-semibold text-slate-600">
+              낙찰가 / 매수가 (만원)
+              <button type="button" onclick="openHelpModal('property_price')" class="q-badge" title="설명 보기">?</button>
+            </label>
+          </div>
+          <input type="number" id="propertyPrice" value="35000" min="100" step="100" class="soft-input" oninput="handlePriceChange()" />
+          <div class="mt-1.5 flex items-center justify-between">
+            <span id="propertyPriceKorean" class="text-xs font-semibold text-teal-700">3억 5,000만원</span>
+            <div class="no-export flex gap-1">
+              <button type="button" onclick="adjustPrice(-1000)" class="px-1.5 py-0.5 text-[11px] bg-slate-100 hover:bg-slate-200 rounded text-slate-600 font-medium">-1천</button>
+              <button type="button" onclick="adjustPrice(1000)" class="px-1.5 py-0.5 text-[11px] bg-slate-100 hover:bg-slate-200 rounded text-slate-600 font-medium">+1천</button>
+              <button type="button" onclick="adjustPrice(5000)" class="px-1.5 py-0.5 text-[11px] bg-slate-100 hover:bg-slate-200 rounded text-slate-600 font-medium">+5천</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Holding Period (Months) -->
+        <div>
+          <div class="flex items-center justify-between mb-1.5">
+            <label class="text-xs sm:text-sm font-semibold text-slate-600">
+              매도까지 보유기간 (개월)
+              <button type="button" onclick="openHelpModal('holding_months')" class="q-badge" title="설명 보기">?</button>
+            </label>
+            <span id="holdingMonthsLabel" class="text-xs font-bold text-teal-700 bg-teal-50 px-2 py-0.5 rounded">6개월</span>
+          </div>
+          <input type="number" id="holdingMonths" value="6" min="1" max="120" step="1" class="soft-input" oninput="syncHoldingSlider(this.value)" />
+          <div class="mt-2 flex items-center gap-2 no-export">
+            <input type="range" id="holdingMonthsSlider" min="1" max="60" value="6" class="w-full accent-teal-700 h-1.5 bg-slate-200 rounded-lg cursor-pointer" oninput="syncHoldingInput(this.value)" />
+          </div>
+          <p class="mt-1 text-xs text-slate-500">대출 실행부터 상환(매도)까지 기간</p>
+        </div>
+
+        <!-- Acquisition Tax + Legal Fees -->
+        <div>
+          <div class="flex items-center justify-between mb-1.5">
+            <label class="text-xs sm:text-sm font-semibold text-slate-600">
+              취득·등록세 + 법무비 (만원)
+              <button type="button" onclick="openHelpModal('acq_cost')" class="q-badge" title="설명 보기">?</button>
+            </label>
+            <label class="no-export inline-flex items-center gap-1 text-xs text-slate-600 cursor-pointer select-none">
+              <input type="checkbox" id="autoAcqCost" checked onchange="handlePriceChange()" class="rounded text-teal-700 focus:ring-teal-600" />
+              <span>1.4% 자동</span>
+            </label>
+          </div>
+          <input type="number" id="acqCost" value="490" min="0" step="10" class="soft-input" oninput="handleManualAcqChange()" />
+          <p class="mt-1.5 text-xs text-slate-500">낙찰가의 1.4%로 자동 계산, 직접 수정 가능</p>
+        </div>
+
+        <!-- Deposit Interest Rate (Opportunity Cost) -->
+        <div>
+          <div class="flex items-center justify-between mb-1.5">
+            <label class="text-xs sm:text-sm font-semibold text-teal-800">
+              예금 금리 (기회비용, 연 %)
+              <button type="button" onclick="openHelpModal('deposit_rate')" class="q-badge bg-teal-700 text-white" title="설명 보기">?</button>
+            </label>
+          </div>
+          <input type="number" id="depositRate" value="4.0" min="0" max="20" step="0.1" class="soft-input border-teal-300" oninput="handleDepositRateChange()" />
+          <p class="mt-1.5 text-xs text-slate-500">대출 차액을 예금했을 때 얻는 이자 수익</p>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- Section 2: Dynamic Loan Cards Header & Add Button -->
+    <div class="space-y-3">
+      <div class="flex flex-wrap items-center justify-between gap-2 px-1">
+        <div class="flex items-center gap-2">
+          <h3 class="text-base sm:text-lg font-bold text-slate-900">비교할 대출 상품</h3>
+          <span id="loanCountBadge" class="px-2 py-0.5 text-xs font-bold rounded-full bg-slate-200 text-slate-700">3개 비교 중</span>
+        </div>
+        <div class="no-export flex items-center gap-2">
+          <button type="button" onclick="addLoanItem()" class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-teal-700 hover:bg-teal-800 text-white text-xs sm:text-sm font-bold shadow-sm transition">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+            <span>비교 대출 추가하기</span>
+          </button>
+        </div>
+      </div>
+
+      <section id="loanCardsContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        <!-- Populated dynamically via JS -->
+      </section>
+    </div>
+
+    <!-- Section 3: Summary Result & Dual Insight -->
+    <section class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5 sm:p-6">
+      <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+        <h3 class="text-lg sm:text-xl font-bold text-slate-900 flex items-center gap-1.5">
+          <span>결과</span>
+          <button type="button" onclick="openHelpModal('result_summary')" class="q-badge" title="결과 해석 방법">?</button>
+        </h3>
+        <span class="text-xs text-slate-500">실질비용 = (누적 이자+수수료) - 예금 이자 기회비용</span>
+      </div>
+
+      <!-- Dynamic Natural Language Conclusion Headline + Cashflow Dual Analysis -->
+      <div id="headlineSummary" class="space-y-2.5 mb-5">
+        <!-- Populated by JS -->
+      </div>
+
+      <!-- Detailed Comparison Table -->
+      <div class="overflow-x-auto -mx-5 sm:mx-0 px-5 sm:px-0">
+        <table class="w-full text-left border-collapse min-w-[850px]">
+          <thead>
+            <tr class="border-b border-slate-200 text-xs sm:text-sm text-slate-500 font-semibold">
+              <th class="py-3 pr-3">대출</th>
+              <th class="py-3 px-2">상환 방식</th>
+              <th class="py-3 px-2 text-right">대출액</th>
+              <th class="py-3 px-2 text-right">
+                여유자금 (차액)
+                <button type="button" onclick="openHelpModal('extra_cash')" class="q-badge" title="여유자금이란?">?</button>
+              </th>
+              <th class="py-3 px-2 text-right">
+                월 평균 납입금 / 누적지출
+                <button type="button" onclick="openHelpModal('monthly_payment')" class="q-badge" title="월 납입금이란?">?</button>
+              </th>
+              <th class="py-3 px-2 text-right">누적 이자</th>
+              <th class="py-3 px-2 text-right">중도상환 수수료</th>
+              <th class="py-3 px-2 text-right text-blue-700">
+                예금 이자 (기회비용)
+                <button type="button" onclick="openHelpModal('deposit_benefit')" class="q-badge" title="예금 이자 수익이란?">?</button>
+              </th>
+              <th class="py-3 pl-2 text-right text-slate-900">
+                실질 총비용
+                <button type="button" onclick="openHelpModal('real_cost')" class="q-badge" title="실질 총비용이란?">?</button>
+              </th>
+            </tr>
+          </thead>
+          <tbody id="resultTableBody" class="divide-y divide-slate-200 text-sm sm:text-base">
+            <!-- Populated by JS -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Section 4: Interactive Chart & Matrix Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      
+      <!-- Total Cost by Holding Period Interactive Chart (7 cols on Desktop) -->
+      <section class="lg:col-span-7 bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5 sm:p-6 flex flex-col justify-between">
+        <div>
+          <!-- Chart Title & Zoom Controls -->
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
+            <div>
+              <h3 class="text-lg sm:text-xl font-bold text-slate-900 flex items-center gap-1.5">
+                <span>보유기간별 실질 총비용</span>
+                <button type="button" onclick="openHelpModal('chart_guide')" class="q-badge" title="그래프 보는 법">?</button>
+              </h3>
+              <p class="text-xs text-slate-500 mt-0.5">그래프의 <strong class="text-teal-700">세로 점선을 좌우로 드래그(터치)</strong>하면 개월별 세부 수치가 바로 비교됩니다.</p>
+            </div>
+
+            <!-- Zoom / Range Buttons -->
+            <div class="no-export flex items-center gap-1 bg-slate-100 p-1 rounded-xl self-start sm:self-auto">
+              <button type="button" onclick="setChartMaxMonths(12)" id="zoomBtn_12" class="px-2.5 py-1 rounded-lg text-xs font-bold transition">12개월(확대)</button>
+              <button type="button" onclick="setChartMaxMonths(24)" id="zoomBtn_24" class="px-2.5 py-1 rounded-lg text-xs font-bold transition">24개월</button>
+              <button type="button" onclick="setChartMaxMonths(36)" id="zoomBtn_36" class="px-2.5 py-1 rounded-lg text-xs font-bold transition">36개월</button>
+              <button type="button" onclick="setChartMaxMonths(60)" id="zoomBtn_60" class="px-2.5 py-1 rounded-lg text-xs font-bold transition">60개월</button>
+            </div>
+          </div>
+
+          <!-- Advantage Interval Badges -->
+          <div id="intervalBadgesContainer" class="flex flex-wrap gap-2 mb-4">
+            <!-- Populated by JS -->
+          </div>
+
+          <!-- Real-time Selected Month Detail Comparison Bar -->
+          <div id="chartInteractiveInspector" class="mb-3 p-3.5 rounded-xl bg-slate-50 border border-slate-200/90">
+            <!-- Populated by JS -->
+          </div>
+        </div>
+
+        <!-- Responsive Interactive SVG Line Chart -->
+        <div class="w-full overflow-hidden my-1">
+          <div id="chartWrapper" class="w-full aspect-[16/10] sm:aspect-[16/9] relative select-none">
+            <!-- SVG injected by JS -->
+          </div>
+        </div>
+
+        <!-- Quick Stepper & Guide Footer -->
+        <div class="mt-3 pt-2 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2">
+          <p class="text-xs text-slate-500">
+            세로 점선이 지금 선택한 보유기간입니다. 선이 아래에 있을수록 그 기간에 싸게 끝납니다.
+          </p>
+          <div class="no-export flex items-center gap-1">
+            <button type="button" onclick="stepHoldingMonth(-1)" class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-xs font-bold text-slate-700">-1개월</button>
+            <button type="button" onclick="stepHoldingMonth(1)" class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-xs font-bold text-slate-700">+1개월</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- When Sale Timing Changes Matrix (5 cols on Desktop) -->
+      <section class="lg:col-span-5 bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5 sm:p-6 flex flex-col justify-between">
+        <div>
+          <h3 class="text-lg sm:text-xl font-bold text-slate-900 mb-1.5 flex items-center gap-1.5">
+            <span>매도 시점이 달라지면</span>
+            <button type="button" onclick="openHelpModal('matrix_guide')" class="q-badge" title="매도 시점 비교표 설명">?</button>
+          </h3>
+          <p class="text-xs sm:text-sm text-slate-500 mb-4 leading-relaxed">
+            같은 대출이라도 매도가 빨라지거나 늦어질 때 실질비용이 어떻게 바뀌는지 봅니다. 굵게 표시한 초록색 칸이 그 기간에 가장 싼 대출입니다.
+          </p>
+
+          <div class="overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0">
+            <table class="w-full text-sm border-collapse min-w-[420px]">
+              <thead id="matrixTableHead">
+                <!-- Populated by JS -->
+              </thead>
+              <tbody id="matrixTableBody" class="divide-y divide-slate-200">
+                <!-- Populated by JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div id="matrixFootnote" class="mt-4 pt-3 border-t border-slate-100 text-xs sm:text-sm text-slate-600 leading-relaxed">
+          <!-- Populated by JS -->
+        </div>
+      </section>
+
+    </div>
+
+    <!-- Bottom Disclaimer Note -->
+    <footer class="px-2 text-xs sm:text-sm text-slate-500 leading-relaxed space-y-1">
+      <p>• 중도상환 수수료는 부과기간 안에 갚는 잔여 원금에 붙고, 체감식은 남은 기간에 비례해 줄어듭니다.</p>
+      <p>• 실질 총비용은 대출 차액(여유자금)을 예금했을 때 얻는 이자 수익을 차감하여 계산됩니다. 대출을 많이 받을수록 이자 비용은 늘지만, 남은 현금을 예금으로 운용할 수 있는 기회비용도 함께 커집니다.</p>
+    </footer>
+
+  </main>
+
+  <!-- Mobile Bottom Floating Quick Bar (Hidden on Desktop) -->
+  <div class="no-export fixed bottom-0 inset-x-0 z-20 lg:hidden bg-white/95 backdrop-blur border-t border-slate-200 px-3 py-2.5 flex items-center justify-between gap-1.5 shadow-lg">
+    <button onclick="openSaveLoadModal()" class="flex-1 py-2.5 px-2 rounded-xl bg-slate-100 active:bg-slate-200 text-slate-800 font-bold text-xs flex items-center justify-center gap-1">
+      <svg class="w-4 h-4 text-teal-700" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"/></svg>
+      <span>클라우드 저장소</span>
+    </button>
+    <button onclick="copyShareUrl()" class="py-2.5 px-2.5 rounded-xl bg-slate-100 active:bg-slate-200 text-slate-700 font-bold text-xs flex items-center justify-center gap-1">
+      <svg class="w-4 h-4 text-teal-700" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
+      <span>링크</span>
+    </button>
+    <button onclick="exportToJpg(false)" class="flex-1 py-2.5 px-2 rounded-xl bg-teal-700 active:bg-teal-800 text-white font-bold text-xs flex items-center justify-center gap-1 shadow-sm">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+      <span>JPG 저장</span>
+    </button>
+    <button onclick="exportToJpg(true)" class="py-2.5 px-2.5 rounded-xl bg-amber-600 active:bg-amber-700 text-white font-bold text-xs flex items-center justify-center gap-1 shadow-sm">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/></svg>
+      <span>공유</span>
+    </button>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MODAL 1: Question Mark (?) Help Tooltip    -->
+  <!-- ========================================== -->
+  <div id="helpModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 modal-backdrop" onclick="closeHelpModal(event)">
+    <div class="bg-white rounded-2xl max-w-lg w-full max-h-[85vh] flex flex-col shadow-2xl border border-slate-200 overflow-hidden" onclick="event.stopPropagation()">
+      <div class="px-5 py-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <span class="w-6 h-6 rounded-full bg-teal-700 text-white text-xs font-bold flex items-center justify-center">?</span>
+          <h4 id="helpModalTitle" class="font-bold text-slate-900 text-base sm:text-lg">항목 상세 설명</h4>
+        </div>
+        <button onclick="closeHelpModal()" class="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 transition">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div id="helpModalBody" class="p-5 overflow-y-auto text-sm sm:text-base text-slate-700 space-y-3 leading-relaxed">
+        <!-- Injected by JS -->
+      </div>
+      <div class="px-5 py-3 bg-slate-50 border-t border-slate-200 flex justify-end">
+        <button onclick="closeHelpModal()" class="px-4 py-2 rounded-xl bg-teal-700 hover:bg-teal-800 text-white font-semibold text-sm transition">
+          이해했습니다
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================= -->
+  <!-- MODAL 2: Cloud Sync + Save / Load Property Comparisons    -->
+  <!-- ========================================================= -->
+  <div id="saveLoadModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 modal-backdrop" onclick="closeSaveLoadModal(event)">
+    <div class="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] flex flex-col shadow-2xl border border-slate-200 overflow-hidden" onclick="event.stopPropagation()">
+      <!-- Header -->
+      <div class="px-5 py-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <svg class="w-5 h-5 text-teal-700" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"/></svg>
+          <h4 class="font-bold text-slate-900 text-base sm:text-lg">클라우드 실시간 저장소 (PC ↔ 모바일)</h4>
+        </div>
+        <button onclick="closeSaveLoadModal()" class="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 transition">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+
+      <!-- Body -->
+      <div class="p-5 overflow-y-auto space-y-5 flex-1">
+        
+        <!-- 1. Firebase Cloud Room / PIN Sync Bar -->
+        <div class="p-4 rounded-xl bg-slate-900 text-white space-y-3">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div class="flex items-center gap-2">
+              <span id="modalCloudDot" class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
+              <span class="text-xs sm:text-sm font-bold">Firebase 실시간 클라우드 (my-loan-calc)</span>
+            </div>
+            <span id="modalCloudStatusLabel" class="text-[11px] px-2 py-0.5 rounded bg-slate-800 text-emerald-300 font-semibold">실시간 동기화 켜짐</span>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-12 gap-2 items-center">
+            <div class="sm:col-span-7 flex items-center gap-2 bg-slate-800 rounded-xl px-3 py-2 border border-slate-700">
+              <span class="text-xs text-slate-400 whitespace-nowrap">동기화 ID(방 번호):</span>
+              <input type="text" id="syncRoomInput" value="minseop" class="bg-transparent text-white font-bold text-sm w-full focus:outline-none" placeholder="예: minseop" />
+              <button onclick="changeSyncRoom()" class="px-2.5 py-1 rounded-lg bg-teal-600 hover:bg-teal-500 text-xs font-bold whitespace-nowrap transition">변경</button>
+            </div>
+            <div class="sm:col-span-5 flex gap-1.5">
+              <button onclick="pushLiveStateToCloud()" class="flex-1 py-2.5 px-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-bold text-emerald-300 transition text-center">
+                ↑ 현재 화면 클라우드 전송
+              </button>
+              <button onclick="pullLiveStateFromCloud()" class="flex-1 py-2.5 px-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-bold text-amber-300 transition text-center">
+                ↓ 최근 전송화면 불러오기
+              </button>
+            </div>
+          </div>
+          <p class="text-[11px] text-slate-400 leading-normal">
+            PC와 스마트폰에서 동일한 <strong>동기화 ID(기본값: minseop)</strong>를 쓰면 아래 저장 목록이 0.1초 만에 서로 실시간으로 동기화됩니다.
+          </p>
+        </div>
+
+        <!-- 2. Save Current Form -->
+        <div class="p-4 rounded-xl bg-teal-50/70 border border-teal-200">
+          <label class="block text-xs sm:text-sm font-bold text-teal-950 mb-2">현재 입력된 아파트/물건 비교 저장하기</label>
+          <div class="flex flex-col sm:flex-row gap-2">
+            <input type="text" id="savePresetTitleInput" placeholder="예: 창녕 코아루더파크 84㎡ (경락잔금 비교)" class="flex-1 px-3.5 py-2.5 rounded-xl bg-white border border-teal-300 text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-600" />
+            <button onclick="saveCurrentPreset()" class="px-5 py-2.5 rounded-xl bg-teal-700 hover:bg-teal-800 text-white font-bold text-sm whitespace-nowrap shadow-sm transition">
+              + 클라우드 & 기기에 저장
+            </button>
+          </div>
+        </div>
+
+        <!-- 3. Saved List -->
+        <div>
+          <div class="flex items-center justify-between mb-2.5">
+            <h5 class="font-bold text-sm text-slate-700">저장된 물건 목록 (클라우드 실시간 연동)</h5>
+            <div class="flex items-center gap-2">
+              <button onclick="exportPresetsJson()" class="text-xs font-semibold text-slate-600 hover:text-teal-700 underline">백업(.json)</button>
+              <span class="text-slate-300">|</span>
+              <label class="text-xs font-semibold text-slate-600 hover:text-teal-700 underline cursor-pointer">
+                <span>복원</span>
+                <input type="file" accept=".json" class="hidden" onchange="importPresetsJson(event)" />
+              </label>
+            </div>
+          </div>
+
+          <div id="savedPresetsList" class="space-y-2.5">
+            <!-- Populated by JS -->
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Footer -->
+      <div class="px-5 py-3 bg-slate-50 border-t border-slate-200 flex justify-between items-center">
+        <button onclick="downloadStandaloneHtml()" class="text-xs font-bold text-teal-800 hover:underline flex items-center gap-1">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+          <span>단일 index.html 파일 다운로드</span>
+        </button>
+        <button onclick="closeSaveLoadModal()" class="px-4 py-2 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-800 font-semibold text-sm transition">
+          닫기
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toastBox" class="fixed bottom-20 lg:bottom-8 left-1/2 -translate-x-1/2 z-50 pointer-events-none opacity-0 transition-opacity duration-200">
+    <div id="toastMessage" class="px-4 py-2.5 rounded-full bg-slate-900/95 text-white text-xs sm:text-sm font-semibold shadow-xl flex items-center gap-2">
+      <span>저장되었습니다.</span>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- MAIN APPLICATION & OPPORTUNITY COST ENGINE                                -->
+  <!-- ========================================================================= -->
+  <script>
+    const STORAGE_KEY = 'loan_calc_pro_presets_v3';
+    const ROOM_STORAGE_KEY = 'loan_calc_sync_room_v1';
+
+    const LOAN_PALETTE = [
+      { id: 'A', color: '#0f766e', label: '청록' },
+      { id: 'B', color: '#b45309', label: '주황' },
+      { id: 'C', color: '#6d28d9', label: '보라' },
+      { id: 'D', color: '#2563eb', label: '파랑' },
+      { id: 'E', color: '#e11d48', label: '로즈' },
+      { id: 'F', color: '#059669', label: '에메랄드' },
+      { id: 'G', color: '#4f46e5', label: '인디고' },
+      { id: 'H', color: '#ca8a04', label: '골드' }
+    ];
+
+    window.appState = {
+      propertyName: '창녕 코아루더파크 84㎡',
+      propertyPrice: 35000,
+      holdingMonths: 6,
+      chartMaxMonths: 36,
+      acqCost: 490,
+      autoAcqCost: true,
+      depositRate: 4.0, // 예금 금리 (기회비용, 연 %)
+      loans: [
+        {
+          id: 'A',
+          name: '은행 주담대(원리금)',
+          color: '#0f766e',
+          rate: 4.1,
+          feeRate: 1.2,
+          feeMonths: 36,
+          feeMethod: 'sliding',
+          repaymentMethod: 'epi',
+          loanTermMonths: 360,
+          showAdvanced: true,
+          limit: 23400
+        },
+        {
+          id: 'B',
+          name: '경락잔금대출(만기일시)',
+          color: '#b45309',
+          rate: 4.9,
+          feeRate: 0.5,
+          feeMonths: 12,
+          feeMethod: 'sliding',
+          repaymentMethod: 'bullet',
+          loanTermMonths: 360,
+          showAdvanced: false,
+          limit: 27000
+        },
+        {
+          id: 'C',
+          name: '2금융권(만기일시)',
+          color: '#6d28d9',
+          rate: 6.5,
+          feeRate: 0.0,
+          feeMonths: 36,
+          feeMethod: 'sliding',
+          repaymentMethod: 'bullet',
+          loanTermMonths: 360,
+          showAdvanced: false,
+          limit: 31500
+        }
+      ]
+    };
+
+    const HELP_CONTENTS = {
+      deposit_rate: {
+        title: '예금 금리 (기회비용) 설정',
+        html: `
+          <p>대출 금액(한도)이 다를 때 발생하는 <strong>여유 현금의 가치</strong>를 계산하기 위한 금리입니다.</p>
+          <p>대출을 가장 적게 받은 상품을 기준(0원)으로 잡고, 대출을 더 많이 받아서 통장에 남게 된 차액을 은행 예금에 넣었을 때 얻을 수 있는 연 이자율(%)을 입력합니다.</p>
+          <p class="text-xs text-teal-700 font-semibold mt-1">※ 보통 3~5% 사이의 시중 파킹통장/예금 금리를 입력합니다.</p>
+        `
+      },
+      extra_cash: {
+        title: '여유자금 (대출 차액)',
+        html: `
+          <p>비교 중인 대출 중 <strong>가장 금액이 적은 대출을 기준</strong>으로, 해당 대출을 선택함으로써 추가로 확보하게 되는 현금입니다.</p>
+          <p>예를 들어 A대출 2억, B대출 2억 5천이라면, B대출의 여유자금은 5천만 원이 됩니다. 이 5천만 원을 예금에 넣어 이자를 벌 수 있다고 가정합니다.</p>
+        `
+      },
+      deposit_benefit: {
+        title: '예금 이자 (기회비용 이익)',
+        html: `
+          <p>확보한 <strong>여유자금 × 예금금리 × 보유기간</strong>으로 계산된 예금 이자 수익입니다.</p>
+          <p>이 금액만큼은 대출 비용을 상쇄해주는 효과가 있습니다.</p>
+        `
+      },
+      real_cost: {
+        title: '실질 총비용',
+        html: `
+          <div class="p-3 rounded-xl bg-teal-50 border border-teal-200 font-bold text-teal-900 text-sm mb-2">
+            실질 총비용 = (누적 이자 + 중도상환수수료) - 예금 이자(기회비용)
+          </div>
+          <p>대출을 많이 받으면 이자 비용은 늘어나지만, 그만큼 내 주머니에 현금이 남아 예금 이자를 벌 수 있습니다. 이 둘을 합쳐서 <strong>진짜로 사라지는 돈(실질 비용)</strong>이 얼마인지를 보여줍니다.</p>
+        `
+      },
+      repayment_all: {
+        title: '4대 상환 방식 비교 & 기회비용 핵심 팁',
+        html: `
+          <div class="space-y-4">
+            <div class="p-3.5 rounded-xl bg-amber-50 border border-amber-200 text-xs sm:text-sm text-amber-950">
+              <div class="font-bold mb-1">💡 대출을 많이 받는 것이 항상 손해일까?</div>
+              <p>대출을 많이 받으면 이자를 더 내지만, 그만큼 내 현금이 남습니다. 남은 현금을 예금 등에 넣어 이자를 벌면 <strong>대출 이자와 예금 이자의 차이(마진)</strong>만큼만 실제 비용이 발생합니다.</p>
+              <p class="mt-1">이 계산기는 <strong>대출 차액에 대한 예금 이자(기회비용)를 반영</strong>하여 가장 현실적인 비용을 비교합니다.</p>
+            </div>
+            
+            <div class="p-3 rounded-xl bg-teal-50/70 border border-teal-200">
+              <div class="font-bold text-teal-900 mb-0.5">1. 만기일시상환 (단기 매도·경매 기본)</div>
+              <p class="text-xs sm:text-sm text-slate-700">보유 기간에는 원금 상환 없이 <strong>매달 이자만 납부</strong>합니다. 월 현금 유출이 가장 적어 자금 회전율에 가장 유리합니다.</p>
+            </div>
+
+            <div class="p-3 rounded-xl bg-slate-50 border border-slate-200">
+              <div class="font-bold text-slate-900 mb-0.5">2. 원리금균등분할상환 (1금융권 주담대 표준)</div>
+              <p class="text-xs sm:text-sm text-slate-700">만기까지 매월 내는 <strong>(원금+이자) 합계액이 동일</strong>합니다. 매달 원금이 조금씩 줄어들어 만기일시보다 이자와 수수료가 소폭 절감됩니다.</p>
+            </div>
+
+            <div class="p-3 rounded-xl bg-slate-50 border border-slate-200">
+              <div class="font-bold text-slate-900 mb-0.5">3. 원금균등분할상환 (체감식 · 총비용 최소)</div>
+              <p class="text-xs sm:text-sm text-slate-700">원금을 만기 개월 수로 똑같이 나누어 갚습니다. <strong>초기 월 납입금 부담이 가장 크지만</strong>, 원금이 가장 빨리 줄어들어 총이자와 수수료는 가장 적습니다.</p>
+            </div>
+
+            <div class="p-3 rounded-xl bg-slate-50 border border-slate-200">
+              <div class="font-bold text-slate-900 mb-0.5">4. 체증식분할상환 (초기 원금부담 최소)</div>
+              <p class="text-xs sm:text-sm text-slate-700">초기에는 원금을 거의 안 갚고 시간이 지날수록 원금 상환액을 늘려가는 방식입니다. 분할상환이 필수인 규제 상품에서 단기 보유 시 만기일시와 가장 유사한 효과를 냅니다.</p>
+            </div>
+          </div>
+        `
+      },
+      property_name: {
+        title: '아파트 / 물건명 메모',
+        html: `
+          <p>비교하려는 아파트 단지명, 동·호수 또는 경매 사건번호를 적어두세요.</p>
+          <p>상단 <strong>[저장소]</strong>에 물건별로 클라우드 저장해 두거나 <strong>[JPG 저장]</strong>으로 이미지를 뽑아 카톡으로 공유할 때 맨 위에 제목으로 깔끔하게 표시됩니다.</p>
+        `
+      },
+      property_price: {
+        title: '낙찰가 / 매수가 (만원)',
+        html: `
+          <p>경매 낙찰가 또는 일반 매매 계약 금액을 <strong>만원 단위</strong>로 입력합니다.</p>
+          <p class="text-xs text-slate-500">예: 3억 5,000만원 → <code class="px-1.5 py-0.5 bg-slate-100 rounded font-bold text-slate-700">35000</code> 입력</p>
+          <p>이 금액을 기준으로 취득세·법무비(약 1.4%)와 각 대출별 <strong>필요 현금(실투자금)</strong>이 자동 계산됩니다.</p>
+        `
+      },
+      holding_months: {
+        title: '매도까지 보유기간 (개월)',
+        html: `
+          <p>대출을 실행한 날로부터 집을 팔아(매도) 대출 원금을 모두 갚기까지 걸리는 예상 기간(개월 수)입니다.</p>
+          <p>하단 그래프의 <strong>세로 점선을 마우스나 손가락으로 좌우 드래그</strong>해도 이 보유기간이 실시간으로 변경됩니다.</p>
+        `
+      },
+      acq_cost: {
+        title: '취득·등록세 + 법무비',
+        html: `
+          <p>부동산 취득 시 필수로 들어가는 취득세와 국민주택채권 할인비용, 법무사 등기 대행 수수료 등을 합산한 금액입니다.</p>
+          <p>통상 낙찰가/매수가의 <strong>약 1.4%</strong>를 잡으면 실무와 거의 일치하며, 다주택 중과나 셀프등기 여부에 따라 숫자를 직접 고칠 수도 있습니다.</p>
+        `
+      },
+      interest_rate: {
+        title: '대출 금리 (연 %)',
+        html: `
+          <p>연간 대출 이자율(%)입니다. 매월 납부하는 이자는 잔여 원금에 <code class="px-1.5 py-0.5 bg-slate-100 rounded">연 금리 ÷ 12개월</code>을 곱해 계산합니다.</p>
+        `
+      },
+      early_fee_rate: {
+        title: '중도상환 수수료 (%)',
+        html: `
+          <p>약정된 수수료 부과기간(보통 3년=36개월)이 끝나기 전에 대출금을 미리 갚을 때 금융사에 내는 위약금 성격의 수수료율입니다.</p>
+          <div class="p-3 rounded-xl bg-slate-100 text-xs sm:text-sm space-y-1">
+            <div class="font-bold text-slate-900">체감식 중도상환수수료 공식:</div>
+            <p class="font-mono text-teal-800">중도상환원금 × 수수료율(%) × (잔여기간 ÷ 부과기간)</p>
+          </div>
+        `
+      },
+      fee_months: {
+        title: '수수료 부과기간 (개월)',
+        html: `
+          <p>중도상환 수수료가 적용되는 총 기간입니다. 시중은행 주택담보대출은 보통 <strong>36개월(3년)</strong>이며, 일부 상품은 <strong>12개월(1년)</strong> 또는 <strong>6개월</strong>인 경우도 있습니다.</p>
+          <p>보유기간이 이 부과기간 이상이 되면 중도상환 수수료는 <strong>0원(전액 면제)</strong>이 됩니다.</p>
+        `
+      },
+      fee_method: {
+        title: '수수료 부과 방식 (체감식 vs 고정식)',
+        html: `
+          <ul class="list-disc pl-5 space-y-2">
+            <li><strong>체감식 (대부분의 금융권 표준):</strong> 대출 후 시간이 지날수록 수수료가 일할/월할 비례하여 줄어듭니다.</li>
+            <li><strong>고정식 (일부 대부/특수 상품):</strong> 부과기간 내 언제 상환하든 기간 비례 감면 없이 약정 수수료율 전체가 부과됩니다.</li>
+          </ul>
+        `
+      },
+      loan_term: {
+        title: '총 대출만기 (개월)',
+        html: `
+          <p><strong>원리금균등·원금균등·체증식 분할상환</strong>을 선택했을 때 매달 갚아나갈 원금 규모를 산정하는 기준 만기입니다. (예: 30년 = 360개월)</p>
+          <p>만기일시상환 선택 시에는 보유기간 동안 이자만 납부하므로 총 대출만기가 월 이자액에 영향을 주지 않습니다.</p>
+        `
+      },
+      loan_limit: {
+        title: '대출 한도 / 실행액 (만원)',
+        html: `
+          <p>해당 금융상품에서 실제로 실행받을 대출 원금(만원)입니다. 우측의 <strong>60% / 70% / 80% / 90%</strong> 버튼을 누르면 낙찰가 대비 비율(LTV)로 즉시 자동 입력됩니다.</p>
+          <p>대출 한도가 높을수록 내 주머니에서 나가는 <strong>필요 현금(실투자금)</strong>은 줄어들고 <strong>여유자금(예금 운용 가능액)</strong>이 늘어납니다.</p>
+        `
+      },
+      required_cash: {
+        title: '필요 현금 (실투자금)',
+        html: `
+          <p>이 대출을 선택했을 때 잔금일에 내가 실제로 준비해야 하는 자기자본(현금)입니다.</p>
+          <div class="p-3 rounded-xl bg-slate-100 font-mono text-xs sm:text-sm text-teal-900">
+            필요 현금 = 낙찰가(매수가) + 취득세·법무비 - 대출 한도
+          </div>
+        `
+      },
+      monthly_payment: {
+        title: '월 평균 납입금 & 누적 총 지출액',
+        html: `
+          <p>보유기간 동안 매달 통장에서 빠져나가는 <strong>월 평균 현금 지출액(원금 상환분 + 월 이자)</strong>과 총 누적 지출액입니다.</p>
+          <ul class="list-disc pl-5 space-y-1 text-xs sm:text-sm">
+            <li><strong>만기일시상환:</strong> 매달 순수 이자만 내므로 월 납입 부담이 가장 적고, 누적 총 지출액도 가장 적습니다.</li>
+            <li><strong>분할상환:</strong> 원금을 함께 갚으므로 월 납입금과 누적 지출액은 커지지만, 갚은 원금은 매도 시 돌려받게 됩니다.</li>
+          </ul>
+        `
+      },
+      result_summary: {
+        title: '결과 요약 & 기회비용 듀얼 분석',
+        html: `
+          <p>입력하신 보유기간 기준으로 <strong>실질 총비용(이자+수수료-예금이자)이 가장 적게 드는 대출</strong>에 초록색 <span class="px-1.5 py-0.5 bg-teal-700 text-white rounded text-xs font-bold">추천</span> 배지가 붙습니다.</p>
+          <p>만약 대출을 많이 받아 이자 부담은 크더라도, 남은 현금의 예금 이자 수익 덕분에 최종적으로 더 이득인 경우를 정확히 가려냅니다.</p>
+        `
+      },
+      chart_guide: {
+        title: '인터랙티브 실질비용 그래프 사용법',
+        html: `
+          <ul class="list-disc pl-5 space-y-2 text-sm">
+            <li><strong>구간 확대(Zoom):</strong> 우측 상단 버튼을 눌러 단기/장기 구간을 확대할 수 있습니다.</li>
+            <li><strong>점선 드래그 이동:</strong> 그래프 위의 세로 점선을 드래그하면 원하는 개월 수의 각 대출별 실질 비용이 바로 위 박스에 실시간으로 표시됩니다.</li>
+          </ul>
+        `
+      },
+      matrix_guide: {
+        title: '매도 시점이 달라지면 (비교 매트릭스)',
+        html: `
+          <p>매도 시점이 3, 6, 12, 24, 36개월로 바뀔 때 각 대출의 실질 총비용(기회비용 반영)이 얼마인지 보여줍니다.</p>
+        `
+      },
+      mobile_install: {
+        title: '스마트폰에 넣고 외부에서 앱처럼 쓰는 방법',
+        html: `
+          <div class="space-y-3 text-sm">
+            <div class="p-3.5 rounded-xl bg-teal-50 border border-teal-200">
+              <div class="font-bold text-teal-900 mb-1">1단계: Netlify Drop 또는 GitHub Pages에 파일 올리기 (1분)</div>
+              <p class="text-xs sm:text-sm text-slate-700">우측 상단 <strong>[HTML 다운로드]</strong>로 받은 파일을 <a href="[https://app.netlify.com/drop](https://app.netlify.com/drop)" target="_blank" class="underline text-teal-800 font-bold">[app.netlify.com/drop](https://app.netlify.com/drop)</a>에 마우스로 끌어다 놓으면 내 전용 웹 주소(https://...)가 즉시 만들어집니다.</p>
+            </div>
+            <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200">
+              <div class="font-bold text-slate-900 mb-1">2단계: 스마트폰 바탕화면에 앱 아이콘 만들기</div>
+              <p class="text-xs sm:text-sm text-slate-700">스마트폰(삼성 인터넷/크롬/사파리)으로 해당 주소에 접속한 뒤 메뉴에서 <strong>[홈 화면에 추가]</strong>를 누르면 일반 앱처럼 아이콘이 생기고 PC와 실시간 동기화됩니다.</p>
+            </div>
+          </div>
+        `
+      }
+    };
+
+    // =========================================================================
+    // CORE FINANCIAL CALCULATION ENGINE
+    // =========================================================================
+
+    function calculateLoanAtMonth(loan, targetMonth) {
+      const P = Math.max(0, Number(loan.limit) || 0);
+      const annualRate = Math.max(0, Number(loan.rate) || 0) / 100;
+      const monthlyRate = annualRate / 12;
+      const feeRate = Math.max(0, Number(loan.feeRate) || 0) / 100;
+      const feeMonths = Math.max(0, parseInt(loan.feeMonths, 10) || 0);
+      const totalTerm = Math.max(1, parseInt(loan.loanTermMonths, 10) || 360);
+      const m = Math.max(0, parseInt(targetMonth, 10) || 0);
+
+      if (P === 0 || m === 0) {
+        return {
+          principal: P,
+          cumulativeInterest: 0,
+          principalPaid: 0,
+          remainingBalance: P,
+          earlyFee: 0,
+          totalCost: 0,
+          totalCashOutlay: 0,
+          avgMonthlyPayment: 0,
+          firstMonthPayment: 0
+        };
+      }
+
+      let balance = P;
+      let cumulativeInterest = 0;
+      let totalCashflowPaid = 0;
+      let firstMonthPayment = 0;
+
+      let epiMonthlyPayment = 0;
+      if (loan.repaymentMethod === 'epi') {
+        if (monthlyRate === 0) {
+          epiMonthlyPayment = P / totalTerm;
+        } else {
+          const factor = Math.pow(1 + monthlyRate, totalTerm);
+          epiMonthlyPayment = P * ((monthlyRate * factor) / (factor - 1));
+        }
+      }
+
+      for (let t = 1; t <= m; t++) {
+        if (balance <= 0) break;
+
+        const interestForMonth = balance * monthlyRate;
+        let principalForMonth = 0;
+
+        if (loan.repaymentMethod === 'bullet') {
+          principalForMonth = 0;
+        } else if (loan.repaymentMethod === 'epi') {
+          principalForMonth = Math.max(0, epiMonthlyPayment - interestForMonth);
+        } else if (loan.repaymentMethod === 'ep') {
+          principalForMonth = P / totalTerm;
+        } else if (loan.repaymentMethod === 'graduated') {
+          principalForMonth = P * ((2 * t) / (totalTerm * (totalTerm + 1)));
+        }
+
+        if (principalForMonth > balance) {
+          principalForMonth = balance;
+        }
+
+        const monthTotalPayment = interestForMonth + principalForMonth;
+        if (t === 1) firstMonthPayment = monthTotalPayment;
+
+        cumulativeInterest += interestForMonth;
+        totalCashflowPaid += monthTotalPayment;
+        balance -= principalForMonth;
+      }
+
+      let earlyFee = 0;
+      if (feeMonths > 0 && m < feeMonths && feeRate > 0 && balance > 0) {
+        if (loan.feeMethod === 'sliding') {
+          const remainingRatio = Math.max(0, (feeMonths - m) / feeMonths);
+          earlyFee = balance * feeRate * remainingRatio;
+        } else {
+          earlyFee = balance * feeRate;
+        }
+      }
+
+      const principalPaid = P - balance;
+      const totalCost = cumulativeInterest + earlyFee;
+      const avgMonthlyPayment = totalCashflowPaid / m;
+      const totalCashOutlay = totalCashflowPaid + earlyFee;
+
+      return {
+        principal: P,
+        cumulativeInterest,
+        principalPaid,
+        remainingBalance: balance,
+        earlyFee,
+        totalCost,
+        totalCashOutlay,
+        avgMonthlyPayment,
+        firstMonthPayment
+      };
+    }
+
+    // =========================================================================
+    // FORMATTING HELPERS
+    // =========================================================================
+
+    function formatManwonToKorean(manwon, includeUnit = true) {
+      const val = Math.round(Number(manwon) || 0);
+      if (val === 0) return includeUnit ? '0만원' : '0';
+      const absVal = Math.abs(val);
+      const sign = val < 0 ? '-' : '';
+      const eok = Math.floor(absVal / 10000);
+      const remMan = absVal % 10000;
+
+      let parts = [];
+      if (eok > 0) parts.push(`${eok.toLocaleString('ko-KR')}억`);
+      if (remMan > 0) parts.push(`${remMan.toLocaleString('ko-KR')}만`);
+      const suffix = includeUnit ? '원' : '';
+      return sign + parts.join(' ') + suffix;
+    }
+
+    function formatManwonShort(manwon) {
+      const val = Math.round(Number(manwon) || 0);
+      return `${val.toLocaleString('ko-KR')}만원`;
+    }
+
+    function getRepaymentLabel(method) {
+      switch (method) {
+        case 'bullet': return '만기일시상환';
+        case 'epi': return '원리금균등';
+        case 'ep': return '원금균등(체감식)';
+        case 'graduated': return '체증식분할';
+        default: return '만기일시상환';
+      }
+    }
+
+    // =========================================================================
+    // DYNAMIC LOAN ADD / REMOVE & CARD RENDERING
+    // =========================================================================
+
+    function addLoanItem() {
+      if (appState.loans.length >= 8) {
+        showToast('비교 대출은 최대 8개까지 추가할 수 있습니다.');
+        return;
+      }
+
+      const usedIds = new Set(appState.loans.map(l => l.id));
+      let nextSpec = LOAN_PALETTE.find(p => !usedIds.has(p.id));
+      if (!nextSpec) {
+        const nextChar = String.fromCharCode(65 + appState.loans.length);
+        nextSpec = { id: nextChar, color: '#0f766e' };
+      }
+
+      const lastLoan = appState.loans[appState.loans.length - 1] || {
+        rate: 5.0,
+        feeRate: 1.0,
+        feeMonths: 36,
+        limit: Math.round((Number(appState.propertyPrice) || 35000) * 0.7)
+      };
+
+      appState.loans.push({
+        id: nextSpec.id,
+        name: `대출 ${nextSpec.id}`,
+        color: nextSpec.color,
+        rate: Number((lastLoan.rate + 0.3).toFixed(1)),
+        feeRate: lastLoan.feeRate,
+        feeMonths: lastLoan.feeMonths,
+        feeMethod: 'sliding',
+        repaymentMethod: 'bullet',
+        loanTermMonths: 360,
+        showAdvanced: false,
+        limit: lastLoan.limit
+      });
+
+      renderLoanCards();
+      updateAllCalculations();
+      showToast(`'대출 ${nextSpec.id}' 항목이 추가되었습니다.`);
+    }
+
+    function removeLoanItem(idx) {
+      if (appState.loans.length <= 2) {
+        showToast('최소 2개의 대출 상품은 비교를 위해 남겨두어야 합니다.');
+        return;
+      }
+      const removedName = appState.loans[idx].name;
+      appState.loans.splice(idx, 1);
+      renderLoanCards();
+      updateAllCalculations();
+      showToast(`'${removedName}' 항목이 삭제되었습니다.`);
+    }
+
+    function toggleLoanAdvanced(idx) {
+      appState.loans[idx].showAdvanced = !appState.loans[idx].showAdvanced;
+      renderLoanCards();
+    }
+
+    function renderLoanCards() {
+      const container = document.getElementById('loanCardsContainer');
+      const countBadge = document.getElementById('loanCountBadge');
+      if (countBadge) countBadge.textContent = `${appState.loans.length}개 비교 중`;
+
+      const totalRequiredBase = (Number(appState.propertyPrice) || 0) + (Number(appState.acqCost) || 0);
+      const canDelete = appState.loans.length > 2;
+      const minLimit = Math.min(...appState.loans.map(l => Number(l.limit) || 0));
+
+      container.innerHTML = appState.loans.map((loan, idx) => {
+        const reqCash = Math.max(0, totalRequiredBase - (Number(loan.limit) || 0));
+        const isAmortizing = loan.repaymentMethod !== 'bullet';
+        const showAdv = !!loan.showAdvanced || isAmortizing;
+        const extraCash = Math.max(0, (Number(loan.limit) || 0) - minLimit);
+
+        return `
+          <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5 flex flex-col justify-between space-y-4 relative overflow-hidden" style="border-top: 5px solid ${loan.color}">
+            <div class="space-y-4">
+              <div>
+                <div class="flex items-center justify-between mb-1.5">
+                  <label class="text-xs font-semibold text-slate-500 flex items-center gap-1.5">
+                    <span class="w-2.5 h-2.5 rounded-full" style="background-color: ${loan.color}"></span>
+                    <span>이름</span>
+                    ${isAmortizing ? `<span class="px-1.5 py-0.5 text-[10px] font-bold rounded bg-teal-50 text-teal-800 border border-teal-200">${getRepaymentLabel(loan.repaymentMethod)}</span>` : ''}
+                  </label>
+                  <div class="flex items-center gap-1.5">
+                    <span class="text-[11px] font-semibold text-slate-400">항목 ${loan.id}</span>
+                    <button
+                      type="button"
+                      onclick="removeLoanItem(${idx})"
+                      class="no-export p-1 rounded-lg ${canDelete ? 'text-slate-400 hover:text-rose-600 hover:bg-rose-50' : 'text-slate-200 cursor-not-allowed'} transition"
+                      title="${canDelete ? '이 대출 항목 삭제' : '최소 2개 이상 필요합니다'}"
+                    >
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                    </button>
+                  </div>
+                </div>
+                <input
+                  type="text"
+                  value="${escapeHtml(loan.name)}"
+                  oninput="updateLoanField(${idx}, 'name', this.value)"
+                  class="soft-input font-bold"
+                  placeholder="대출 이름 입력"
+                />
+              </div>
+
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-xs font-semibold text-slate-600 mb-1.5">
+                    금리 (연 %)
+                    <button type="button" onclick="openHelpModal('interest_rate')" class="q-badge">?</button>
+                  </label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    min="0"
+                    max="30"
+                    value="${loan.rate}"
+                    oninput="updateLoanField(${idx}, 'rate', this.value)"
+                    class="soft-input"
+                  />
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold text-slate-600 mb-1.5">
+                    중도상환 수수료 (%)
+                    <button type="button" onclick="openHelpModal('early_fee_rate')" class="q-badge">?</button>
+                  </label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    min="0"
+                    max="10"
+                    value="${loan.feeRate}"
+                    oninput="updateLoanField(${idx}, 'feeRate', this.value)"
+                    class="soft-input"
+                  />
+                </div>
+              </div>
+
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-xs font-semibold text-slate-600 mb-1.5">
+                    수수료 부과기간 (개월)
+                    <button type="button" onclick="openHelpModal('fee_months')" class="q-badge">?</button>
+                  </label>
+                  <input
+                    type="number"
+                    step="1"
+                    min="0"
+                    max="120"
+                    value="${loan.feeMonths}"
+                    oninput="updateLoanField(${idx}, 'feeMonths', this.value)"
+                    class="soft-input"
+                  />
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold text-slate-600 mb-1.5">
+                    부과 방식
+                    <button type="button" onclick="openHelpModal('fee_method')" class="q-badge">?</button>
+                  </label>
+                  <select
+                    onchange="updateLoanField(${idx}, 'feeMethod', this.value)"
+                    class="soft-select"
+                  >
+                    <option value="sliding" ${loan.feeMethod === 'sliding' ? 'selected' : ''}>체감식</option>
+                    <option value="fixed" ${loan.feeMethod === 'fixed' ? 'selected' : ''}>고정식</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-2 gap-3 items-start">
+                <div>
+                  <div class="flex items-center justify-between mb-1.5">
+                    <label class="text-xs font-semibold text-slate-600">
+                      대출 한도 (만원)
+                      <button type="button" onclick="openHelpModal('loan_limit')" class="q-badge">?</button>
+                    </label>
+                  </div>
+                  <input
+                    type="number"
+                    step="100"
+                    min="0"
+                    value="${loan.limit}"
+                    id="loanLimitInput_${idx}"
+                    oninput="updateLoanField(${idx}, 'limit', this.value)"
+                    class="soft-input"
+                  />
+                  <div class="mt-1 flex items-center justify-between">
+                    <span id="loanLimitKorean_${idx}" class="text-[11px] font-semibold text-slate-500">${formatManwonToKorean(loan.limit)}</span>
+                  </div>
+                  <div class="no-export mt-1.5 flex flex-wrap gap-1">
+                    <button type="button" onclick="setLoanLtv(${idx}, 0.6)" class="px-1.5 py-0.5 text-[10px] font-semibold bg-slate-100 hover:bg-teal-50 hover:text-teal-700 rounded text-slate-600 transition">60%</button>
+                    <button type="button" onclick="setLoanLtv(${idx}, 0.7)" class="px-1.5 py-0.5 text-[10px] font-semibold bg-slate-100 hover:bg-teal-50 hover:text-teal-700 rounded text-slate-600 transition">70%</button>
+                    <button type="button" onclick="setLoanLtv(${idx}, 0.8)" class="px-1.5 py-0.5 text-[10px] font-semibold bg-slate-100 hover:bg-teal-50 hover:text-teal-700 rounded text-slate-600 transition">80%</button>
+                    <button type="button" onclick="setLoanLtv(${idx}, 0.9)" class="px-1.5 py-0.5 text-[10px] font-semibold bg-slate-100 hover:bg-teal-50 hover:text-teal-700 rounded text-slate-600 transition">90%</button>
+                  </div>
+                </div>
+
+                <div>
+                  <label class="block text-xs font-semibold text-slate-600 mb-1.5">
+                    필요 현금 (만원)
+                    <button type="button" onclick="openHelpModal('required_cash')" class="q-badge">?</button>
+                  </label>
+                  <div class="px-3.5 py-2.5 rounded-[10px] bg-white border border-slate-200 font-extrabold text-[1.05rem] text-slate-900 select-all" id="reqCashBox_${idx}">
+                    ${reqCash.toLocaleString('ko-KR')}
+                  </div>
+                  <div class="mt-1 flex items-center justify-between">
+                    <span id="reqCashKorean_${idx}" class="text-[11px] font-semibold text-teal-700">${formatManwonToKorean(reqCash)}</span>
+                  </div>
+                  ${extraCash > 0 ? `<div class="mt-1 text-[11px] font-semibold text-blue-600" id="extraCashBox_${idx}">여유자금 +${formatManwonShort(extraCash)}</div>` : `<div class="mt-1 text-[11px] font-semibold text-slate-400" id="extraCashBox_${idx}">기준 대출 (여유자금 0원)</div>`}
+                </div>
+              </div>
+
+              <div class="pt-2 border-t border-slate-100">
+                <div class="flex items-center justify-between">
+                  <button
+                    type="button"
+                    onclick="toggleLoanAdvanced(${idx})"
+                    class="no-export inline-flex items-center gap-1.5 text-xs font-semibold ${isAmortizing ? 'text-teal-800' : 'text-slate-500 hover:text-slate-800'} transition"
+                  >
+                    <svg class="w-3.5 h-3.5 transition-transform ${showAdv ? 'rotate-180' : ''}" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                    <span>상환방식 설정 (${getRepaymentLabel(loan.repaymentMethod)})</span>
+                  </button>
+                  <button type="button" onclick="openHelpModal('repayment_all')" class="q-badge" title="상환방식 설명">?</button>
+                </div>
+
+                ${showAdv ? `
+                  <div class="mt-2.5 p-3 rounded-xl bg-slate-50 border border-slate-200/90 space-y-2.5">
+                    <div class="grid grid-cols-1 ${isAmortizing ? 'sm:grid-cols-12' : ''} gap-2 items-end">
+                      <div class="${isAmortizing ? 'sm:col-span-7' : ''}">
+                        <label class="block text-[11px] font-bold text-slate-600 mb-1">상환 방식</label>
+                        <select
+                          onchange="updateLoanRepaymentMethod(${idx}, this.value)"
+                          class="soft-select bg-white border-slate-300 text-xs sm:text-sm py-2"
+                        >
+                          <option value="bullet" ${loan.repaymentMethod === 'bullet' ? 'selected' : ''}>만기일시상환 (이자만)</option>
+                          <option value="epi" ${loan.repaymentMethod === 'epi' ? 'selected' : ''}>원리금균등분할상환</option>
+                          <option value="ep" ${loan.repaymentMethod === 'ep' ? 'selected' : ''}>원금균등분할상환 (체감식)</option>
+                          <option value="graduated" ${loan.repaymentMethod === 'graduated' ? 'selected' : ''}>체증식분할상환</option>
+                        </select>
+                      </div>
+                      ${isAmortizing ? `
+                        <div class="sm:col-span-5">
+                          <label class="block text-[11px] font-bold text-slate-600 mb-1">
+                            총 대출만기(개월)
+                            <button type="button" onclick="openHelpModal('loan_term')" class="q-badge">?</button>
+                          </label>
+                          <input
+                            type="number"
+                            step="12"
+                            min="12"
+                            max="600"
+                            value="${loan.loanTermMonths}"
+                            oninput="updateLoanField(${idx}, 'loanTermMonths', this.value)"
+                            class="soft-input bg-white text-xs sm:text-sm py-2"
+                          />
+                        </div>
+                      ` : ''}
+                    </div>
+                    <p class="text-[11px] text-slate-500 leading-snug">
+                      ${loan.repaymentMethod === 'bullet'
+                        ? '보유기간 동안 원금 상환 없이 매달 순수 이자만 납부합니다.'
+                        : `매월 원금을 상환하여 잔여 원금이 줄어든 만큼 이자와 중도상환수수료가 절감됩니다.`}
+                    </p>
+                  </div>
+                ` : ''}
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // =========================================================================
+    // UPDATE & RECALCULATE ALL VIEWS
+    // =========================================================================
+
+    function updateAllCalculations() {
+      const m = Math.max(1, parseInt(appState.holdingMonths, 10) || 6);
+      const totalRequiredBase = (Number(appState.propertyPrice) || 0) + (Number(appState.acqCost) || 0);
+      const depositRate = Math.max(0, Number(appState.depositRate) || 0);
+
+      document.getElementById('propertyBadgeDisplay').textContent = appState.propertyName || '기본 물건 비교';
+      document.getElementById('propertyPriceKorean').textContent = formatManwonToKorean(appState.propertyPrice);
+      document.getElementById('holdingMonthsLabel').textContent = `${m}개월`;
+
+      const minLimit = Math.min(...appState.loans.map(l => Number(l.limit) || 0));
+
+      const evaluated = appState.loans.map((loan, idx) => {
+        const calc = calculateLoanAtMonth(loan, m);
+        const reqCash = Math.max(0, totalRequiredBase - (Number(loan.limit) || 0));
+        
+        const extraCash = Math.max(0, (Number(loan.limit) || 0) - minLimit);
+        const opportunityGain = extraCash * (depositRate / 100) * (m / 12);
+        const effectiveCost = calc.totalCost - opportunityGain;
+
+        const reqBox = document.getElementById(`reqCashBox_${idx}`);
+        const reqKor = document.getElementById(`reqCashKorean_${idx}`);
+        const limKor = document.getElementById(`loanLimitKorean_${idx}`);
+        const extraBox = document.getElementById(`extraCashBox_${idx}`);
+        
+        if (reqBox) reqBox.textContent = Math.round(reqCash).toLocaleString('ko-KR');
+        if (reqKor) reqKor.textContent = formatManwonToKorean(reqCash);
+        if (limKor) limKor.textContent = formatManwonToKorean(loan.limit);
+        if (extraBox) {
+          if (extraCash > 0) {
+            extraBox.textContent = `여유자금 +${formatManwonShort(extraCash)}`;
+            extraBox.className = "mt-1 text-[11px] font-semibold text-blue-600";
+          } else {
+            extraBox.textContent = `기준 대출 (여유자금 0원)`;
+            extraBox.className = "mt-1 text-[11px] font-semibold text-slate-400";
+          }
+        }
+
+        return {
+          loan,
+          idx,
+          reqCash,
+          extraCash,
+          opportunityGain,
+          effectiveCost,
+          ...calc
+        };
+      });
+
+      const sortedByCost = [...evaluated].sort((a, b) => a.effectiveCost - b.effectiveCost);
+      const winner = sortedByCost[0];
+      const second = sortedByCost[1];
+      const diffManwon = second ? Math.round(second.effectiveCost - winner.effectiveCost) : 0;
+
+      const sortedByCashflow = [...evaluated].sort((a, b) => a.avgMonthlyPayment - b.avgMonthlyPayment);
+      const lowestMonthly = sortedByCashflow[0];
+
+      const headlineEl = document.getElementById('headlineSummary');
+      let primaryHtml = `
+        <div class="p-4 rounded-xl bg-slate-50 border border-slate-200/90 text-base sm:text-lg font-medium text-slate-800 leading-relaxed">
+          <strong class="font-extrabold text-slate-900">${m}개월</strong> 보유하면 
+          <strong class="font-extrabold text-teal-800">${escapeHtml(winner.loan.name)}</strong>이(가) 
+          기회비용을 제외한 실질 총비용 <strong class="font-extrabold text-teal-800 underline decoration-teal-500/50 underline-offset-4">${formatManwonShort(winner.effectiveCost)}</strong>으로 가장 쌉니다.
+          ${second ? `다음 순위(${escapeHtml(second.loan.name)})보다 <strong class="font-extrabold text-slate-900">${formatManwonShort(diffManwon)}</strong> 덜 듭니다.` : ''}
+        </div>
+      `;
+
+      const hasNonBullet = evaluated.some(e => e.loan.repaymentMethod !== 'bullet');
+      const monthlyDiff = Math.round(winner.avgMonthlyPayment - lowestMonthly.avgMonthlyPayment);
+
+      let cashflowInsightHtml = '';
+      if (winner.loan.id !== lowestMonthly.loan.id && monthlyDiff >= 5) {
+        const costGapWithLowestMonthly = Math.round(lowestMonthly.effectiveCost - winner.effectiveCost);
+        cashflowInsightHtml = `
+          <div class="p-3.5 rounded-xl bg-amber-50/80 border border-amber-200 text-xs sm:text-sm text-amber-950 flex items-start gap-2.5">
+            <span class="px-2 py-0.5 rounded bg-amber-600 text-white font-bold text-[11px] flex-shrink-0 mt-0.5">현금흐름 비교</span>
+            <div class="leading-relaxed">
+              실질 비용은 <strong>${escapeHtml(winner.loan.name)}</strong>이(가) <strong>${formatManwonShort(costGapWithLowestMonthly)}</strong> 더 저렴합니다. <br/>
+              하지만 보유기간 중 통장에서 실제로 빠져나가는 돈을 비교하면, <strong>${escapeHtml(lowestMonthly.loan.name)}</strong>이(가) 
+              월 평균 <strong>${formatManwonShort(lowestMonthly.avgMonthlyPayment)}</strong>으로 매월 약 <strong>${formatManwonShort(monthlyDiff)}</strong> 적게 나갑니다.
+            </div>
+          </div>
+        `;
+      } else if (hasNonBullet) {
+        cashflowInsightHtml = `
+          <div class="p-3.5 rounded-xl bg-teal-50/70 border border-teal-200 text-xs sm:text-sm text-teal-950 flex items-start gap-2.5">
+            <span class="px-2 py-0.5 rounded bg-teal-700 text-white font-bold text-[11px] flex-shrink-0 mt-0.5">상환방식 참고</span>
+            <div class="leading-relaxed">
+              분할상환 선택으로 보유기간 중 갚은 원금은 비용이 아니라 매도 시 상환할 원금이 줄어든 것이며, 아래 표의 <strong>월 평균 납입금 / 누적지출</strong>에서 매달 묶이는 현금흐름 차이를 함께 확인하세요.
+            </div>
+          </div>
+        `;
+      }
+
+      headlineEl.innerHTML = primaryHtml + cashflowInsightHtml;
+
+      const tbody = document.getElementById('resultTableBody');
+      tbody.innerHTML = evaluated.map(item => {
+        const isWinner = item.loan.id === winner.loan.id;
+        const rowClass = isWinner ? 'bg-emerald-50/70 font-semibold' : 'hover:bg-slate-50/80';
+
+        return `
+          <tr class="${rowClass} transition">
+            <td class="py-3.5 pr-3 whitespace-nowrap">
+              <div class="flex items-center gap-2">
+                <span class="w-2.5 h-2.5 rounded-full flex-shrink-0" style="background-color: ${item.loan.color}"></span>
+                <span class="font-bold text-slate-900">${escapeHtml(item.loan.name)}</span>
+                ${isWinner ? '<span class="px-2 py-0.5 text-[11px] font-bold bg-teal-700 text-white rounded-md">추천</span>' : ''}
+              </div>
+            </td>
+            <td class="py-3.5 px-2 whitespace-nowrap text-xs sm:text-sm text-slate-600">
+              <span class="px-2 py-0.5 rounded bg-slate-100 text-slate-700 font-medium">${getRepaymentLabel(item.loan.repaymentMethod)}</span>
+            </td>
+            <td class="py-3.5 px-2 text-right whitespace-nowrap text-slate-700">${formatManwonToKorean(item.loan.limit)}</td>
+            <td class="py-3.5 px-2 text-right whitespace-nowrap">
+               ${item.extraCash > 0 ? `<span class="text-blue-600 font-semibold">+${formatManwonShort(item.extraCash)}</span>` : `<span class="text-slate-400">0원 (기준)</span>`}
+            </td>
+            <td class="py-3.5 px-2 text-right whitespace-nowrap text-slate-600">
+              <div>${formatManwonShort(item.avgMonthlyPayment)}</div>
+              ${item.principalPaid > 0 ? `<div class="text-[11px] text-teal-700 mt-0.5">원금상환 ${formatManwonShort(item.principalPaid)}</div>` : ''}
+              <div class="text-[11px] text-slate-500 mt-0.5" title="누적 이자+원금+수수료">총지출 ${formatManwonShort(item.totalCashOutlay)}</div>
+            </td>
+            <td class="py-3.5 px-2 text-right whitespace-nowrap text-slate-600">${formatManwonShort(item.cumulativeInterest)}</td>
+            <td class="py-3.5 px-2 text-right whitespace-nowrap text-slate-600">${formatManwonShort(item.earlyFee)}</td>
+            <td class="py-3.5 px-2 text-right whitespace-nowrap text-blue-600 font-semibold">
+               ${item.opportunityGain > 0 ? `-${formatManwonShort(item.opportunityGain)}` : '0원'}
+            </td>
+            <td class="py-3.5 pl-2 text-right whitespace-nowrap font-extrabold ${isWinner ? 'text-teal-800 text-base sm:text-lg' : 'text-slate-900'}">
+              ${formatManwonShort(item.effectiveCost)}
+            </td>
+          </tr>
+        `;
+      }).join('');
+
+      renderChartAndIntervals(m);
+      renderMatrixTable(m);
+    }
+
+    // =========================================================================
+    // INTERACTIVE SVG LINE CHART
+    // =========================================================================
+
+    let isDraggingChartLine = false;
+
+    function setChartMaxMonths(maxM) {
+      appState.chartMaxMonths = maxM;
+      updateAllCalculations();
+    }
+
+    function stepHoldingMonth(delta) {
+      const nextM = Math.max(1, Math.min(120, (parseInt(appState.holdingMonths, 10) || 6) + delta));
+      appState.holdingMonths = nextM;
+      document.getElementById('holdingMonths').value = nextM;
+      document.getElementById('holdingMonthsSlider').value = Math.min(60, nextM);
+      if (nextM > appState.chartMaxMonths) {
+        appState.chartMaxMonths = Math.min(120, Math.ceil(nextM / 12) * 12);
+      }
+      updateAllCalculations();
+    }
+
+    function renderChartAndIntervals(selectedMonth) {
+      const maxPlotMonths = Math.max(appState.chartMaxMonths || 36, selectedMonth);
+      const depositRate = Math.max(0, Number(appState.depositRate) || 0);
+      const minLimit = Math.min(...appState.loans.map(l => Number(l.limit) || 0));
+
+      [12, 24, 36, 60].forEach(z => {
+        const btn = document.getElementById(`zoomBtn_${z}`);
+        if (!btn) return;
+        if (maxPlotMonths === z) {
+          btn.className = 'px-2.5 py-1 rounded-lg text-xs font-bold bg-teal-700 text-white shadow-sm transition';
+        } else {
+          btn.className = 'px-2.5 py-1 rounded-lg text-xs font-bold text-slate-600 hover:text-slate-900 transition';
+        }
+      });
+
+      const series = appState.loans.map(loan => {
+        const points = [];
+        const extraCash = Math.max(0, (Number(loan.limit) || 0) - minLimit);
+        for (let t = 0; t <= maxPlotMonths; t++) {
+          const res = calculateLoanAtMonth(loan, t);
+          const opportunityGain = extraCash * (depositRate / 100) * (t / 12);
+          const effectiveCost = res.totalCost - opportunityGain;
+          
+          points.push({
+            month: t,
+            cost: res.totalCost,
+            interest: res.cumulativeInterest,
+            fee: res.earlyFee,
+            cashOutlay: res.totalCashOutlay,
+            opportunityGain: opportunityGain,
+            effectiveCost: effectiveCost
+          });
+        }
+        return { loan, points };
+      });
+
+      const monthlyWinners = [];
+      for (let t = 1; t <= maxPlotMonths; t++) {
+        let bestLoan = appState.loans[0];
+        let minCost = Infinity;
+        series.forEach(s => {
+          const c = s.points[t].effectiveCost;
+          if (c < minCost) {
+            minCost = c;
+            bestLoan = s.loan;
+          }
+        });
+        monthlyWinners.push({ month: t, loan: bestLoan });
+      }
+
+      const intervals = [];
+      monthlyWinners.forEach(item => {
+        const last = intervals[intervals.length - 1];
+        if (!last || last.loan.id !== item.loan.id) {
+          intervals.push({ start: item.month, end: item.month, loan: item.loan });
+        } else {
+          last.end = item.month;
+        }
+      });
+
+      const badgesContainer = document.getElementById('intervalBadgesContainer');
+      badgesContainer.innerHTML = intervals.map(iv => {
+        const rangeText = iv.start === iv.end ? `${iv.start}개월` : `${iv.start}~${iv.end}개월`;
+        return `
+          <div class="inline-flex items-center rounded-xl bg-white border border-slate-200 shadow-sm overflow-hidden text-xs sm:text-sm">
+            <span class="w-1.5 self-stretch" style="background-color: ${iv.loan.color}"></span>
+            <span class="px-3 py-1.5 text-slate-700">
+              ${rangeText}: <strong class="font-extrabold text-slate-900">${escapeHtml(iv.loan.name)} 유리</strong>
+            </span>
+          </div>
+        `;
+      }).join('');
+
+      const clampedSelected = Math.min(maxPlotMonths, Math.max(1, selectedMonth));
+      const inspectorItems = series.map(s => ({
+        loan: s.loan,
+        ...s.points[clampedSelected]
+      })).sort((a, b) => a.effectiveCost - b.effectiveCost);
+
+      const minCostAtSel = inspectorItems[0].effectiveCost;
+      const inspectorEl = document.getElementById('chartInteractiveInspector');
+      inspectorEl.innerHTML = `
+        <div class="flex items-center justify-between mb-2">
+          <div class="flex items-center gap-1.5">
+            <span class="px-2 py-0.5 rounded-md bg-slate-900 text-white text-xs font-extrabold">${clampedSelected}개월 시점</span>
+            <span class="text-xs font-semibold text-slate-600">실질비용 실시간 비교</span>
+          </div>
+          <span class="text-[11px] text-teal-700 font-semibold">최저: ${escapeHtml(inspectorItems[0].loan.name)} (${formatManwonShort(minCostAtSel)})</span>
+        </div>
+        <div class="grid grid-cols-2 sm:grid-cols-${Math.min(4, appState.loans.length)} gap-2">
+          ${series.map(s => {
+            const pt = s.points[clampedSelected];
+            const isBest = Math.abs(pt.effectiveCost - minCostAtSel) < 0.01;
+            const diff = Math.round(pt.effectiveCost - minCostAtSel);
+            return `
+              <div class="p-2.5 rounded-lg bg-white border ${isBest ? 'border-teal-600 ring-1 ring-teal-600/30' : 'border-slate-200'}">
+                <div class="flex items-center justify-between gap-1 mb-1">
+                  <div class="flex items-center gap-1.5 min-w-0">
+                    <span class="w-2 h-2 rounded-full flex-shrink-0" style="background-color: ${s.loan.color}"></span>
+                    <span class="text-xs font-bold text-slate-800 truncate">${escapeHtml(s.loan.name)}</span>
+                  </div>
+                  ${isBest
+                    ? '<span class="text-[10px] font-extrabold text-teal-700 flex-shrink-0">1위</span>'
+                    : `<span class="text-[10px] font-semibold text-slate-400 flex-shrink-0">+${diff.toLocaleString('ko-KR')}만</span>`}
+                </div>
+                <div class="text-sm font-extrabold ${isBest ? 'text-teal-800' : 'text-slate-900'}">${formatManwonShort(pt.effectiveCost)}</div>
+                <div class="text-[10px] text-slate-500 mt-0.5">비용 ${Math.round(pt.cost).toLocaleString('ko-KR')} - 예금이익 ${Math.round(pt.opportunityGain).toLocaleString('ko-KR')}</div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      `;
+
+      const svgWidth = 680;
+      const svgHeight = 340;
+      const padLeft = 56;
+      const padRight = 84;
+      const padTop = 30;
+      const padBottom = 38;
+      const plotW = svgWidth - padLeft - padRight;
+      const plotH = svgHeight - padTop - padBottom;
+
+      let maxCost = 500;
+      let minCost = 0;
+      series.forEach(s => {
+        s.points.forEach(pt => {
+          if (pt.effectiveCost > maxCost) maxCost = pt.effectiveCost;
+          if (pt.effectiveCost < minCost) minCost = pt.effectiveCost;
+        });
+      });
+      const yRange = maxCost - minCost;
+      const yStep = yRange <= 1000 ? 250 : yRange <= 2500 ? 500 : yRange <= 5000 ? 1000 : 5000;
+      const yMax = Math.ceil(maxCost / yStep) * yStep;
+      const yMin = Math.floor(minCost / yStep) * yStep;
+
+      const totalYRange = yMax - yMin;
+      const xToPx = (m) => padLeft + (m / maxPlotMonths) * plotW;
+      const yToPx = (c) => padTop + plotH - ((c - yMin) / totalYRange) * plotH;
+
+      let gridLinesHtml = '';
+      const numTicks = 4;
+      for (let i = 0; i <= numTicks; i++) {
+        const val = Math.round(yMin + (totalYRange / numTicks) * i);
+        const y = yToPx(val);
+        gridLinesHtml += `
+          <line x1="${padLeft}" y1="${y}" x2="${svgWidth - padRight}" y2="${y}" stroke="${val === 0 ? '#94a3b8' : '#e2e8f0'}" stroke-width="${val === 0 ? '1.5' : '1'}" stroke-dasharray="${val === 0 ? '4 4' : ''}" />
+          <text x="${padLeft - 8}" y="${y + 4}" text-anchor="end" fill="${val === 0 ? '#334155' : '#64748b'}" font-size="11" font-weight="${val === 0 ? 'bold' : 'normal'}">${val.toLocaleString('ko-KR')}</text>
+        `;
+      }
+
+      let xLabelsHtml = '';
+      const xTickStep = maxPlotMonths <= 12 ? 2 : maxPlotMonths <= 24 ? 4 : maxPlotMonths <= 36 ? 6 : 10;
+      for (let m = 0; m <= maxPlotMonths; m += xTickStep) {
+        const x = xToPx(m);
+        xLabelsHtml += `
+          <line x1="${x}" y1="${padTop + plotH}" x2="${x}" y2="${padTop + plotH + 4}" stroke="#cbd5e1" stroke-width="1" />
+          <text x="${x}" y="${svgHeight - 10}" text-anchor="middle" fill="#64748b" font-size="11">${m === 0 ? '0' : m + '개월'}</text>
+        `;
+      }
+
+      const selX = xToPx(clampedSelected);
+      const verticalLineHtml = `
+        <line x1="${selX}" y1="${padTop}" x2="${selX}" y2="${padTop + plotH}" stroke="#0f172a" stroke-width="2" stroke-dasharray="4 4" />
+        <g style="cursor: ew-resize;">
+          <rect x="${selX - 30}" y="${padTop - 22}" width="60" height="20" rx="6" fill="#0f766e" />
+          <text x="${selX}" y="${padTop - 9}" text-anchor="middle" fill="#ffffff" font-size="10.5" font-weight="bold">◀ ${clampedSelected}개월 ▶</text>
+        </g>
+      `;
+
+      const endLabels = series.map(s => {
+        const lastPt = s.points[s.points.length - 1];
+        return {
+          loan: s.loan,
+          x: xToPx(lastPt.month) + 6,
+          rawY: yToPx(lastPt.effectiveCost) + 4,
+          y: yToPx(lastPt.effectiveCost) + 4
+        };
+      }).sort((a, b) => a.rawY - b.rawY);
+
+      for (let i = 1; i < endLabels.length; i++) {
+        if (endLabels[i].y - endLabels[i - 1].y < 13) {
+          endLabels[i].y = endLabels[i - 1].y + 13;
+        }
+      }
+
+      let pathsHtml = '';
+      series.forEach(s => {
+        const d = s.points.map((pt, i) => `${i === 0 ? 'M' : 'L'} ${xToPx(pt.month).toFixed(1)} ${yToPx(pt.effectiveCost).toFixed(1)}`).join(' ');
+        const selPt = s.points[clampedSelected];
+        const labelObj = endLabels.find(l => l.loan.id === s.loan.id);
+
+        pathsHtml += `
+          <path d="${d}" fill="none" stroke="${s.loan.color}" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" />
+          <circle cx="${xToPx(clampedSelected)}" cy="${yToPx(selPt.effectiveCost)}" r="5" fill="${s.loan.color}" stroke="#ffffff" stroke-width="2" />
+          <text x="${labelObj.x}" y="${labelObj.y}" fill="${s.loan.color}" font-size="11.5" font-weight="bold">${escapeHtml(s.loan.name)}</text>
+        `;
+      });
+
+      const wrapper = document.getElementById('chartWrapper');
+      wrapper.innerHTML = `
+        <svg id="interactiveChartSvg" viewBox="0 0 ${svgWidth} ${svgHeight}" class="w-full h-full select-none interactive-chart-svg"
+             data-pad-left="${padLeft}" data-plot-w="${plotW}" data-max-months="${maxPlotMonths}" data-svg-w="${svgWidth}">
+          <text x="${padLeft}" y="${padTop - 10}" fill="#64748b" font-size="10.5">단위: 만원</text>
+          ${gridLinesHtml}
+          ${xLabelsHtml}
+          ${pathsHtml}
+          ${verticalLineHtml}
+          <rect x="${padLeft - 10}" y="0" width="${plotW + 20}" height="${svgHeight}" fill="transparent" />
+        </svg>
+      `;
+
+      attachChartDragListeners();
+    }
+
+    function attachChartDragListeners() {
+      const svg = document.getElementById('interactiveChartSvg');
+      if (!svg) return;
+
+      const updateMonthFromClientX = (clientX) => {
+        const rect = svg.getBoundingClientRect();
+        const svgW = Number(svg.dataset.svgW) || 680;
+        const padLeft = Number(svg.dataset.padLeft) || 56;
+        const plotW = Number(svg.dataset.plotW) || 540;
+        const maxMonths = Number(svg.dataset.maxMonths) || 36;
+
+        const relX = ((clientX - rect.left) / rect.width) * svgW;
+        const ratio = Math.max(0, Math.min(1, (relX - padLeft) / plotW));
+        const newMonth = Math.max(1, Math.round(ratio * maxMonths));
+
+        if (newMonth !== appState.holdingMonths) {
+          appState.holdingMonths = newMonth;
+          document.getElementById('holdingMonths').value = newMonth;
+          document.getElementById('holdingMonthsSlider').value = Math.min(60, newMonth);
+          updateAllCalculations();
+        }
+      };
+
+      svg.onmousedown = (e) => {
+        isDraggingChartLine = true;
+        updateMonthFromClientX(e.clientX);
+      };
+
+      svg.ontouchstart = (e) => {
+        if (e.touches && e.touches.length > 0) {
+          isDraggingChartLine = true;
+          updateMonthFromClientX(e.touches[0].clientX);
+        }
+      };
+
+      svg.ontouchmove = (e) => {
+        if (!isDraggingChartLine || !e.touches || e.touches.length === 0) return;
+        updateMonthFromClientX(e.touches[0].clientX);
+      };
+
+      svg.ontouchend = () => {
+        isDraggingChartLine = false;
+      };
+
+      window.onmousemove = (e) => {
+        if (!isDraggingChartLine) return;
+        updateMonthFromClientX(e.clientX);
+      };
+
+      window.onmouseup = () => {
+        isDraggingChartLine = false;
+      };
+    }
+
+    // =========================================================================
+    // HOLDING PERIOD MATRIX TABLE
+    // =========================================================================
+
+    function renderMatrixTable(selectedMonth) {
+      const baseMilestones = [3, 6, 12, 24, 36];
+      if (!baseMilestones.includes(selectedMonth)) {
+        baseMilestones.push(selectedMonth);
+        baseMilestones.sort((a, b) => a - b);
+      }
+
+      const depositRate = Math.max(0, Number(appState.depositRate) || 0);
+      const minLimit = Math.min(...appState.loans.map(l => Number(l.limit) || 0));
+
+      const colMinCosts = {};
+      baseMilestones.forEach(m => {
+        let minC = Infinity;
+        appState.loans.forEach(loan => {
+          const baseCalc = calculateLoanAtMonth(loan, m);
+          const extraCash = Math.max(0, (Number(loan.limit) || 0) - minLimit);
+          const opportunityGain = extraCash * (depositRate / 100) * (m / 12);
+          const effectiveCost = baseCalc.totalCost - opportunityGain;
+          if (effectiveCost < minC) minC = effectiveCost;
+        });
+        colMinCosts[m] = minC;
+      });
+
+      const thead = document.getElementById('matrixTableHead');
+      thead.innerHTML = `
+        <tr class="border-b border-slate-200 text-xs text-slate-500 font-semibold">
+          <th class="py-2.5 pr-2 text-left">대출</th>
+          ${baseMilestones.map(m => {
+            const isCurrent = m === selectedMonth;
+            return `<th class="py-2.5 px-2 text-right ${isCurrent ? 'bg-slate-100/90 text-slate-900 font-bold rounded-t-lg' : ''}">
+              ${m}개월${isCurrent ? ' <span class="text-[10px] text-teal-700 block sm:inline">(현재)</span>' : ''}
+            </th>`;
+          }).join('')}
+        </tr>
+      `;
+
+      const tbody = document.getElementById('matrixTableBody');
+      tbody.innerHTML = appState.loans.map(loan => {
+        const extraCash = Math.max(0, (Number(loan.limit) || 0) - minLimit);
+        
+        return `
+          <tr>
+            <td class="py-3 pr-2 whitespace-nowrap font-bold text-slate-900">
+              <div class="flex items-center gap-1.5">
+                <span class="w-2.5 h-2.5 rounded-full flex-shrink-0" style="background-color: ${loan.color}"></span>
+                <span>${escapeHtml(loan.name)}</span>
+              </div>
+            </td>
+            ${baseMilestones.map(m => {
+              const baseCalc = calculateLoanAtMonth(loan, m);
+              const opportunityGain = extraCash * (depositRate / 100) * (m / 12);
+              const effectiveCost = baseCalc.totalCost - opportunityGain;
+              
+              const isWinner = Math.abs(effectiveCost - colMinCosts[m]) < 0.01;
+              const isCurrent = m === selectedMonth;
+              return `
+                <td class="p-1.5 text-right whitespace-nowrap ${isCurrent ? 'bg-slate-100/70' : ''}">
+                  <div class="px-2 py-1.5 rounded-lg text-xs sm:text-sm ${isWinner ? 'matrix-winner' : 'text-slate-700'}">
+                    ${formatManwonShort(effectiveCost)}
+                  </div>
+                </td>
+              `;
+            }).join('')}
+          </tr>
+        `;
+      }).join('');
+
+      const winnerAt3 = getBestLoanAt(3);
+      const winnerAt24 = getBestLoanAt(24);
+
+      const footnoteEl = document.getElementById('matrixFootnote');
+      if (winnerAt3.id === winnerAt24.id) {
+        footnoteEl.innerHTML = `단기(3개월)부터 장기(24개월 이상)까지 전 구간에서 <strong class="text-teal-800">${escapeHtml(winnerAt3.name)}</strong>이(가) 실질비용 기준 가장 유리합니다.`;
+      } else {
+        footnoteEl.innerHTML = `매도가 3개월 안팎으로 빨라지면 <strong class="text-slate-900">${escapeHtml(winnerAt3.name)}</strong>이(가) 싸고, 보유기간이 길어지면 <strong class="text-teal-800">${escapeHtml(winnerAt24.name)}</strong>이(가) 더 유리해집니다.`;
+      }
+    }
+
+    function getBestLoanAt(m) {
+      const depositRate = Math.max(0, Number(appState.depositRate) || 0);
+      const minLimit = Math.min(...appState.loans.map(l => Number(l.limit) || 0));
+      
+      let best = appState.loans[0];
+      let minC = Infinity;
+      appState.loans.forEach(l => {
+        const baseCalc = calculateLoanAtMonth(l, m);
+        const extraCash = Math.max(0, (Number(l.limit) || 0) - minLimit);
+        const opportunityGain = extraCash * (depositRate / 100) * (m / 12);
+        const effectiveCost = baseCalc.totalCost - opportunityGain;
+        
+        if (effectiveCost < minC) {
+          minC = effectiveCost;
+          best = l;
+        }
+      });
+      return best;
+    }
+
+    // =========================================================================
+    // EVENT HANDLERS & INPUT SYNCHRONIZATION
+    // =========================================================================
+
+    function handleInputChange() {
+      appState.propertyName = document.getElementById('propertyName').value;
+      updateAllCalculations();
+    }
+
+    function handlePriceChange() {
+      const priceVal = Number(document.getElementById('propertyPrice').value) || 0;
+      appState.propertyPrice = priceVal;
+      appState.autoAcqCost = document.getElementById('autoAcqCost').checked;
+
+      if (appState.autoAcqCost) {
+        appState.acqCost = Math.round(priceVal * 0.014);
+        document.getElementById('acqCost').value = appState.acqCost;
+      }
+      updateAllCalculations();
+    }
+
+    function handleDepositRateChange() {
+      appState.depositRate = Number(document.getElementById('depositRate').value) || 0;
+      updateAllCalculations();
+    }
+
+    function adjustPrice(deltaManwon) {
+      const nextPrice = Math.max(0, (Number(appState.propertyPrice) || 0) + deltaManwon);
+      document.getElementById('propertyPrice').value = nextPrice;
+      handlePriceChange();
+    }
+
+    function handleManualAcqChange() {
+      document.getElementById('autoAcqCost').checked = false;
+      appState.autoAcqCost = false;
+      appState.acqCost = Number(document.getElementById('acqCost').value) || 0;
+      updateAllCalculations();
+    }
+
+    function syncHoldingSlider(val) {
+      const m = Math.max(1, Math.min(120, parseInt(val, 10) || 1));
+      appState.holdingMonths = m;
+      const slider = document.getElementById('holdingMonthsSlider');
+      if (m <= 60) slider.value = m;
+      updateAllCalculations();
+    }
+
+    function syncHoldingInput(val) {
+      const m = parseInt(val, 10) || 6;
+      appState.holdingMonths = m;
+      document.getElementById('holdingMonths').value = m;
+      if (m > appState.chartMaxMonths) {
+        appState.chartMaxMonths = Math.min(60, Math.ceil(m / 12) * 12);
+      }
+      updateAllCalculations();
+    }
+
+    function updateLoanField(idx, field, value) {
+      if (field === 'name' || field === 'feeMethod' || field === 'repaymentMethod') {
+        appState.loans[idx][field] = value;
+      } else {
+        appState.loans[idx][field] = Number(value) || 0;
+      }
+      updateAllCalculations();
+    }
+
+    function updateLoanRepaymentMethod(idx, value) {
+      appState.loans[idx].repaymentMethod = value;
+      renderLoanCards();
+      updateAllCalculations();
+    }
+
+    function setLoanLtv(idx, ratio) {
+      const price = Number(appState.propertyPrice) || 0;
+      const newLimit = Math.round(price * ratio);
+      appState.loans[idx].limit = newLimit;
+      const inputEl = document.getElementById(`loanLimitInput_${idx}`);
+      if (inputEl) inputEl.value = newLimit;
+      renderLoanCards();
+      updateAllCalculations();
+    }
+
+    function applyStateToUI(newState) {
+      if (!newState) return;
+      window.appState = JSON.parse(JSON.stringify(newState));
+      if (!appState.chartMaxMonths) appState.chartMaxMonths = 36;
+      if (appState.depositRate === undefined) appState.depositRate = 4.0;
+
+      document.getElementById('propertyName').value = appState.propertyName || '';
+      document.getElementById('propertyPrice').value = appState.propertyPrice || 35000;
+      document.getElementById('holdingMonths').value = appState.holdingMonths || 6;
+      document.getElementById('holdingMonthsSlider').value = Math.min(60, appState.holdingMonths || 6);
+      document.getElementById('acqCost').value = appState.acqCost || 0;
+      document.getElementById('autoAcqCost').checked = !!appState.autoAcqCost;
+      document.getElementById('depositRate').value = appState.depositRate;
+
+      renderLoanCards();
+      updateAllCalculations();
+    }
+
+    // =========================================================================
+    // SHARE URL (1-SECOND KAKAOTALK LINK SYNC) & STANDALONE HTML DOWNLOAD
+    // =========================================================================
+
+    function copyShareUrl() {
+      try {
+        const jsonStr = JSON.stringify(appState);
+        const encoded = btoa(encodeURIComponent(jsonStr));
+        const url = `${window.location.origin}${window.location.pathname}?s=${encoded}`;
+        navigator.clipboard.writeText(url).then(() => {
+          showToast('현재 계산 세팅이 담긴 링크가 복사되었습니다! 카톡에 붙여넣으세요.');
+        }).catch(() => {
+          prompt('아래 링크를 복사하세요:', url);
+        });
+      } catch (e) {
+        showToast('링크 생성에 실패했습니다.');
+      }
+    }
+
+    function checkUrlStateOnLoad() {
+      try {
+        const params = new URLSearchParams(window.location.search);
+        const s = params.get('s');
+        if (s) {
+          const decoded = JSON.parse(decodeURIComponent(atob(s)));
+          if (decoded && Array.isArray(decoded.loans)) {
+            applyStateToUI(decoded);
+            showToast('공유 링크의 계산 세팅을 성공적으로 불러왔습니다.');
+          }
+        }
+      } catch (e) {
+        console.warn('URL parameter load skipped:', e);
+      }
+    }
+
+    function downloadStandaloneHtml() {
+      const htmlContent = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
+      const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'index.html';
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast('index.html 파일이 다운로드되었습니다.');
+    }
+
+    // =========================================================================
+    // HELP TOOLTIP MODAL (?) FUNCTIONS
+    // =========================================================================
+
+    function openHelpModal(key) {
+      const item = HELP_CONTENTS[key] || HELP_CONTENTS.repayment_all;
+      document.getElementById('helpModalTitle').textContent = item.title;
+      document.getElementById('helpModalBody').innerHTML = item.html;
+      const modal = document.getElementById('helpModal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function closeHelpModal() {
+      const modal = document.getElementById('helpModal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
+    // =========================================================================
+    // SAVE & LOAD SYSTEM (LOCALSTORAGE + FIREBASE REALTIME CLOUD)
+    // =========================================================================
+
+    function getSavedPresets() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return getDefaultSamplePresets();
+        const parsed = JSON.parse(raw);
+        return Array.isArray(parsed) ? parsed : getDefaultSamplePresets();
+      } catch (err) {
+        return getDefaultSamplePresets();
+      }
+    }
+
+    function getDefaultSamplePresets() {
+      const samples = [
+        {
+          id: 'sample_1',
+          title: '창녕 코아루더파크 84㎡ (단기 6개월 매도 비교)',
+          savedAt: '2026. 11. 11.',
+          state: JSON.parse(JSON.stringify(appState))
+        },
+        {
+          id: 'sample_2',
+          title: '천안 불당동 아파트 경매 (원리금균등 vs 만기일시)',
+          savedAt: '2026. 11. 11.',
+          state: {
+            propertyName: '천안 불당 지웰더샵 84㎡',
+            propertyPrice: 65000,
+            holdingMonths: 12,
+            chartMaxMonths: 36,
+            acqCost: 910,
+            autoAcqCost: true,
+            depositRate: 4.0,
+            loans: [
+              {
+                id: 'A',
+                name: '시중은행 주담대(원리금)',
+                color: '#0f766e',
+                rate: 4.1,
+                feeRate: 1.2,
+                feeMonths: 36,
+                feeMethod: 'sliding',
+                repaymentMethod: 'epi',
+                loanTermMonths: 360,
+                showAdvanced: true,
+                limit: 45500
+              },
+              {
+                id: 'B',
+                name: '경락잔금대출(만기일시)',
+                color: '#b45309',
+                rate: 5.4,
+                feeRate: 0.6,
+                feeMonths: 12,
+                feeMethod: 'sliding',
+                repaymentMethod: 'bullet',
+                loanTermMonths: 360,
+                showAdvanced: false,
+                limit: 52000
+              },
+              {
+                id: 'C',
+                name: '단위농협(만기일시)',
+                color: '#6d28d9',
+                rate: 4.8,
+                feeRate: 0.8,
+                feeMonths: 36,
+                feeMethod: 'sliding',
+                repaymentMethod: 'bullet',
+                loanTermMonths: 360,
+                showAdvanced: false,
+                limit: 45500
+              }
+            ]
+          }
+        }
+      ];
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(samples));
+      return samples;
+    }
+
+    function updateSavedCountBadge() {
+      const list = getSavedPresets();
+      document.getElementById('savedCountBadge').textContent = list.length;
+    }
+
+    function openSaveLoadModal() {
+      document.getElementById('savePresetTitleInput').value = appState.propertyName || '';
+      const currentRoom = localStorage.getItem(ROOM_STORAGE_KEY) || 'minseop';
+      document.getElementById('syncRoomInput').value = currentRoom;
+      renderSavedPresetsList();
+      const modal = document.getElementById('saveLoadModal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function closeSaveLoadModal() {
+      const modal = document.getElementById('saveLoadModal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
+    async function saveCurrentPreset() {
+      const titleInput = document.getElementById('savePresetTitleInput');
+      const title = (titleInput.value || appState.propertyName || '이름 없는 물건').trim();
+      appState.propertyName = title;
+      document.getElementById('propertyName').value = title;
+
+      const list = getSavedPresets();
+      const now = new Date();
+      const dateStr = `${now.getFullYear()}. ${now.getMonth() + 1}. ${now.getDate()}. ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+
+      const newEntry = {
+        id: 'preset_' + Date.now(),
+        title,
+        savedAt: dateStr,
+        state: JSON.parse(JSON.stringify(appState))
+      };
+
+      list.unshift(newEntry);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+      updateSavedCountBadge();
+      renderSavedPresetsList();
+      updateAllCalculations();
+
+      if (window.syncPresetsToFirestore) {
+        await window.syncPresetsToFirestore(list, appState);
+      } else {
+        showToast(`'${title}' 비교 데이터가 저장되었습니다.`);
+      }
+    }
+
+    function loadPresetById(id) {
+      const list = getSavedPresets();
+      const found = list.find(item => item.id === id);
+      if (!found) return;
+
+      applyStateToUI(found.state);
+      closeSaveLoadModal();
+      showToast(`'${found.title}' 데이터를 불러왔습니다.`);
+    }
+
+    async function deletePresetById(id) {
+      const list = getSavedPresets().filter(item => item.id !== id);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+      updateSavedCountBadge();
+      renderSavedPresetsList();
+      if (window.syncPresetsToFirestore) {
+        await window.syncPresetsToFirestore(list, appState);
+      }
+      showToast('저장된 항목을 삭제했습니다.');
+    }
+
+    function renderSavedPresetsList() {
+      const container = document.getElementById('savedPresetsList');
+      if (!container) return;
+      const list = getSavedPresets();
+
+      if (list.length === 0) {
+        container.innerHTML = `
+          <div class="p-8 text-center rounded-xl border border-dashed border-slate-300 text-slate-400 text-sm">
+            아직 저장된 아파트/물건 비교 내역이 없습니다.<br/>위 입력창에서 현재 상태를 저장해 보세요.
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = list.map(item => {
+        const st = item.state;
+        const loanSummary = (st.loans || []).map(l => `${l.name}(${l.rate}%)`).join(' · ');
+        const depRateText = st.depositRate !== undefined ? `예금 ${st.depositRate}%` : '';
+        return `
+          <div class="p-3.5 rounded-xl bg-white border border-slate-200 hover:border-teal-600/60 transition flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm">
+            <div class="min-w-0">
+              <div class="flex items-center gap-2">
+                <span class="font-bold text-slate-900 text-sm sm:text-base truncate">${escapeHtml(item.title)}</span>
+                <span class="text-[11px] text-slate-400 flex-shrink-0">${item.savedAt}</span>
+              </div>
+              <div class="mt-1 text-xs text-slate-600 flex flex-wrap items-center gap-x-2 gap-y-1">
+                <span class="font-semibold text-teal-800">매수가 ${formatManwonToKorean(st.propertyPrice)}</span>
+                <span>·</span>
+                <span>보유 ${st.holdingMonths}개월</span>
+                ${depRateText ? `<span>·</span><span class="text-blue-700 font-medium">${depRateText}</span>` : ''}
+                <span>·</span>
+                <span class="text-slate-500 truncate">${escapeHtml(loanSummary)}</span>
+              </div>
+            </div>
+            <div class="flex items-center gap-1.5 self-end sm:self-center flex-shrink-0">
+              <button onclick="loadPresetById('${item.id}')" class="px-3.5 py-1.5 rounded-lg bg-teal-700 hover:bg-teal-800 text-white font-bold text-xs transition">
+                불러오기
+              </button>
+              <button onclick="deletePresetById('${item.id}')" class="px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-rose-50 hover:text-rose-600 text-slate-500 font-semibold text-xs transition">
+                삭제
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function exportPresetsJson() {
+      const list = getSavedPresets();
+      const blob = new Blob([JSON.stringify(list, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `대출비교계산기_저장목록_${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast('백업 파일(.json)이 다운로드되었습니다.');
+    }
+
+    function importPresetsJson(event) {
+      const file = event.target.files && event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = async function(e) {
+        try {
+          const imported = JSON.parse(e.target.result);
+          if (Array.isArray(imported)) {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(imported));
+            updateSavedCountBadge();
+            renderSavedPresetsList();
+            if (window.syncPresetsToFirestore) {
+              await window.syncPresetsToFirestore(imported, appState);
+            }
+            showToast(`${imported.length}개의 물건 비교 데이터를 복원 및 동기화했습니다.`);
+          }
+        } catch (err) {
+          showToast('올바른 백업 파일이 아닙니다.');
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    // =========================================================================
+    // JPG IMAGE EXPORT & MOBILE SHARE
+    // =========================================================================
+
+    async function exportToJpg(tryShare = false) {
+      const captureEl = document.getElementById('captureArea');
+      const now = new Date();
+      document.getElementById('timestampDisplay').textContent = `${now.getFullYear()}.${String(now.getMonth()+1).padStart(2,'0')}.${String(now.getDate()).padStart(2,'0')} 기준`;
+
+      showToast('고화질 JPG 이미지를 생성하고 있습니다...');
+      captureEl.classList.add('exporting-jpg');
+
+      try {
+        await new Promise(r => setTimeout(r, 120));
+        const canvas = await html2canvas(captureEl, {
+          backgroundColor: '#f2f4f7',
+          scale: Math.min(2, window.devicePixelRatio || 2),
+          useCORS: true,
+          logging: false
+        });
+
+        captureEl.classList.remove('exporting-jpg');
+
+        const safeName = (appState.propertyName || '대출비교').replace(/[^가-힣a-zA-Z0-9_-]/g, '_');
+        const fileName = `대출비교_${safeName}_${appState.holdingMonths}개월.jpg`;
+
+        canvas.toBlob(async (blob) => {
+          if (!blob) {
+            showToast('이미지 생성 중 오류가 발생했습니다.');
+            return;
+          }
+
+          if (tryShare && navigator.canShare) {
+            const file = new File([blob], fileName, { type: 'image/jpeg' });
+            if (navigator.canShare({ files: [file] })) {
+              try {
+                await navigator.share({
+                  title: `${appState.propertyName} 대출비교 결과`,
+                  text: `${appState.propertyName} (${appState.holdingMonths}개월 보유 기준) 대출비교계산기 분석표입니다.`,
+                  files: [file]
+                });
+                showToast('공유 창을 열었습니다.');
+                return;
+              } catch (shareErr) {
+                if (shareErr.name === 'AbortError') return;
+              }
+            }
+          }
+
+          const link = document.createElement('a');
+          link.download = fileName;
+          link.href = URL.createObjectURL(blob);
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          URL.revokeObjectURL(link.href);
+
+          showToast(`JPG 이미지가 저장되었습니다 (${fileName})`);
+        }, 'image/jpeg', 0.94);
+
+      } catch (err) {
+        captureEl.classList.remove('exporting-jpg');
+        showToast('이미지 변환에 실패했습니다.');
+      }
+    }
+
+    // =========================================================================
+    // UTILITIES & INITIALIZATION
+    // =========================================================================
+
+    let toastTimer = null;
+    window.showToast = function(msg) {
+      const box = document.getElementById('toastBox');
+      const text = document.getElementById('toastMessage');
+      if (!box || !text) return;
+      text.textContent = msg;
+      box.classList.remove('opacity-0');
+      box.classList.add('opacity-100');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => {
+        box.classList.remove('opacity-100');
+        box.classList.add('opacity-0');
+      }, 2600);
+    };
+
+    function escapeHtml(str) {
+      return String(str || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      renderLoanCards();
+      updateSavedCountBadge();
+      updateAllCalculations();
+      checkUrlStateOnLoad();
+    });
+  </script>
+
+  <!-- ========================================================================= -->
+  <!-- FIREBASE REALTIME CLOUD SYNC MODULE (my-loan-calc)                        -->
+  <!-- ========================================================================= -->
+  <script type="module">
+    import { initializeApp } from "[https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js](https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js)";
+    import { getFirestore, doc, setDoc, getDoc, onSnapshot } from "[https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js](https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js)";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBHWR-jeQW_eTxDePEYnawqUP-33SK3XCo",
+      authDomain: "my-loan-calc.firebaseapp.com",
+      projectId: "my-loan-calc",
+      storageBucket: "my-loan-calc.firebasestorage.app",
+      messagingSenderId: "1047627167014",
+      appId: "1:1047627167014:web:705189262d398e603bfde7"
+    };
+
+    let db = null;
+    let unsubscribeRoom = null;
+    let currentRoom = localStorage.getItem('loan_calc_sync_room_v1') || 'minseop';
+
+    function setCloudStatusUI(connected, message) {
+      const dot = document.getElementById('cloudStatusDot');
+      const text = document.getElementById('cloudStatusText');
+      const modalDot = document.getElementById('modalCloudDot');
+      const modalLabel = document.getElementById('modalCloudStatusLabel');
+
+      if (connected) {
+        if (dot) dot.className = 'w-2 h-2 rounded-full bg-emerald-500';
+        if (text) text.textContent = `☁️ 실시간 연동됨 (${currentRoom})`;
+        if (modalDot) modalDot.className = 'w-2.5 h-2.5 rounded-full bg-emerald-400';
+        if (modalLabel) modalLabel.textContent = message || '실시간 동기화 켜짐';
+      } else {
+        if (dot) dot.className = 'w-2 h-2 rounded-full bg-rose-500';
+        if (text) text.textContent = '로컬 저장 모드';
+        if (modalDot) modalDot.className = 'w-2.5 h-2.5 rounded-full bg-rose-400';
+        if (modalLabel) modalLabel.textContent = message || '오프라인/권한 확인 필요';
+      }
+    }
+
+    function subscribeToCloudRoom(roomName) {
+      if (!db) return;
+      if (unsubscribeRoom) unsubscribeRoom();
+
+      currentRoom = (roomName || 'minseop').trim();
+      localStorage.setItem('loan_calc_sync_room_v1', currentRoom);
+
+      const roomRef = doc(db, 'loan_workspaces', currentRoom);
+      unsubscribeRoom = onSnapshot(roomRef, (snap) => {
+        setCloudStatusUI(true, `방 '${currentRoom}' 실시간 연결됨`);
+        if (snap.exists()) {
+          const data = snap.data();
+          if (Array.isArray(data.presets)) {
+            localStorage.setItem('loan_calc_pro_presets_v3', JSON.stringify(data.presets));
+            if (window.updateSavedCountBadge) window.updateSavedCountBadge();
+            if (window.renderSavedPresetsList) window.renderSavedPresetsList();
+          }
+        } else {
+          const initialPresets = window.getSavedPresets ? window.getSavedPresets() : [];
+          setDoc(roomRef, {
+            presets: initialPresets,
+            liveState: window.appState,
+            updatedAt: new Date().toISOString()
+          }, { merge: true }).catch(() => {});
+        }
+      }, (err) => {
+        console.warn('Firestore sync error:', err);
+        setCloudStatusUI(false, 'Firestore 규칙 확인 필요');
+      });
+    }
+
+    window.syncPresetsToFirestore = async function(presetsList, liveStateObj) {
+      if (!db) return;
+      try {
+        const roomRef = doc(db, 'loan_workspaces', currentRoom);
+        await setDoc(roomRef, {
+          presets: presetsList,
+          liveState: liveStateObj || window.appState,
+          updatedAt: new Date().toISOString()
+        }, { merge: true });
+        window.showToast(`클라우드(${currentRoom})에 실시간 저장되었습니다.`);
+      } catch (e) {
+        console.error(e);
+        window.showToast('기기에는 저장되었으나 클라우드 전송에 실패했습니다.');
+      }
+    };
+
+    window.pushLiveStateToCloud = async function() {
+      if (!db) return;
+      try {
+        const roomRef = doc(db, 'loan_workspaces', currentRoom);
+        await setDoc(roomRef, {
+          liveState: window.appState,
+          updatedAt: new Date().toISOString()
+        }, { merge: true });
+        window.showToast(`현재 화면 세팅을 클라우드(${currentRoom})로 전송했습니다!`);
+      } catch (e) {
+        window.showToast('클라우드 화면 전송에 실패했습니다.');
+      }
+    };
+
+    window.pullLiveStateFromCloud = async function() {
+      if (!db) return;
+      try {
+        const roomRef = doc(db, 'loan_workspaces', currentRoom);
+        const snap = await getDoc(roomRef);
+        if (snap.exists() && snap.data().liveState) {
+          window.applyStateToUI(snap.data().liveState);
+          window.closeSaveLoadModal();
+          window.showToast(`클라우드(${currentRoom})에서 최근 화면을 불러왔습니다!`);
+        } else {
+          window.showToast('아직 전송된 화면 데이터가 없습니다.');
+        }
+      } catch (e) {
+        window.showToast('클라우드 불러오기에 실패했습니다.');
+      }
+    };
+
+    window.changeSyncRoom = function() {
+      const input = document.getElementById('syncRoomInput');
+      const nextRoom = (input && input.value ? input.value : 'minseop').trim();
+      subscribeToCloudRoom(nextRoom);
+      window.showToast(`동기화 ID가 '${nextRoom}'(으)로 변경되었습니다.`);
+    };
+
+    try {
+      const app = initializeApp(firebaseConfig);
+      db = getFirestore(app);
+      subscribeToCloudRoom(currentRoom);
+    } catch (err) {
+      console.error('Firebase init failed:', err);
+      setCloudStatusUI(false, '초기화 실패');
+    }
+  </script>
+</body>
+</html>
